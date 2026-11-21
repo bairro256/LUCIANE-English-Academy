@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="pt">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#102a24">
+  <title>LUCIANE English Academy · AI Tutor</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <a class="brand" href="#"><span class="brand-mark">L</span><span>LUCIANE <small>ENGLISH ACADEMY</small></span></a>
+      <span class="status"><i></i> Tutor de demonstração</span>
+    </header>
+    <section class="hero">
+      <p class="eyebrow">O TEU ESPAÇO DE APRENDIZAGEM</p>
+      <h1>Aprende inglês.<br><em>Ganha confiança.</em></h1>
+      <p class="intro">Um tutor que acompanha o teu ritmo, explica em português e ajuda-te a comunicar em inglês.</p>
+    </section>
+    <section class="workspace">
+      <aside class="settings">
+        <h2>Personaliza a aula</h2>
+        <label for="level">O teu nível</label>
+        <select id="level">
+          <option>Pre-A1 · Iniciante absoluto</option><option>A1 · Iniciante</option><option>A2 · Elementar</option><option selected>B1 · Intermédio</option><option>B2 · Intermédio superior</option><option>C1 · Avançado</option><option>C2 · Proficiência</option>
+        </select>
+        <label for="language">Idioma das explicações</label>
+        <select id="language"><option value="pt">Português</option><option value="en">English</option></select>
+        <div class="skill-title">Praticar</div>
+        <div class="skills">
+          <button class="skill active" data-mode="conversation">Conversação</button>
+          <button class="skill" data-mode="grammar">Gramática</button>
+          <button class="skill" data-mode="vocabulary">Vocabulário</button>
+          <button class="skill" data-mode="writing">Escrita</button>
+          <button class="skill" data-mode="listening">Compreensão oral</button>
+        </div>
+        <div class="tip"><strong>Dica de aprendizagem</strong><p>Não tenhas medo de errar. Cada correcção é um passo em frente.</p></div>
+      </aside>
+      <section class="chat-panel">
+        <div class="chat-head"><div><strong id="modeTitle">Conversação em inglês</strong><small id="modeSub">Pratica ao teu ritmo · Nível B1</small></div><button id="clear" class="clear">Nova aula ↗</button></div>
+        <div id="messages" class="messages" aria-live="polite">
+          <div class="message tutor"><span class="avatar">L</span><div><small>LUCIANE AI TUTOR</small><p>Hello! 👋 I'm your English tutor. Tell me about yourself or ask me anything. I can explain in Portuguese whenever you need.</p><p class="translation">Olá! Sou o teu tutor de inglês. Fala-me sobre ti ou pergunta o que quiseres.</p></div></div>
+        </div>
+        <div class="composer">
+          <textarea id="prompt" rows="2" placeholder="Escreve a tua mensagem em inglês ou português..."></textarea>
+          <div class="composer-actions"><button id="voice" class="icon-btn" title="Ditado por voz" aria-label="Ditado por voz">🎙</button><span id="hint">Enter para enviar · Shift + Enter para nova linha</span><button id="send" class="send">Enviar ↑</button></div>
+        </div>
+        <p class="disclaimer">Versão de interface em desenvolvimento. As respostas desta demonstração não são geradas por IA.</p>
+      </section>
+    </section>
+    <footer>© LUCIANE English Academy · Learn with confidence.</footer>
+  </main>
+  <script src="./app.js"></script>
+</body>
+</html>
