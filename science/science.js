@@ -18,7 +18,7 @@ const meta = {
 function toast(message){const el=$("toast");el.textContent=message;el.classList.add("show");setTimeout(()=>el.classList.remove("show"),3200)}
 function setAuthMode(){ $("authTitle").textContent=signupMode?"Criar o teu perfil académico.":"A tua jornada começa aqui."; $("authSubtitle").textContent=signupMode?"Uma conta. Três escolas. Um histórico individual.":"Acede ao teu espaço académico individual."; $("authSubmit").innerHTML=signupMode?'Criar conta académica <span>↗</span>':'Entrar no ecossistema <span>↗</span>'; $("switchText").textContent=signupMode?"Já tens uma conta?":"Ainda não tens uma conta?"; $("switchMode").textContent=signupMode?"Entrar":"Criar conta"; $("password").autocomplete=signupMode?"new-password":"current-password"; $("authNotice").textContent=""}
 $("switchMode").addEventListener("click",()=>{signupMode=!signupMode;setAuthMode()});
-$("authForm").addEventListener("submit",async e=>{e.preventDefault();$("authSubmit").disabled=true;$("authNotice").textContent="A validar acesso…";const email=$("email").value.trim(),password=$("password").value;let result;if(signupMode)result=await supabase.auth.signUp({email,password});else result=await supabase.auth.signInWithPassword({email,password});$("authSubmit").disabled=false;if(result.error){$("authNotice").textContent=result.error.message;return}if(signupMode&&!result.data.session){$("authNotice").textContent="Conta criada. Confirma o endereço de e-mail para activar o acesso.";return}user=result.data.user;await loadApp()});
+$("authForm").addEventListener("submit",async e=>{e.preventDefault();$("authSubmit").disabled=true;$("authNotice").textContent="A validar acesso…";const email=$("email").value.trim(),password=$("password").value;let result;if(signupMode)result=await supabase.auth.signUp({email,password,options:{emailRedirectTo:window.location.origin+window.location.pathname}});else result=await supabase.auth.signInWithPassword({email,password});$("authSubmit").disabled=false;if(result.error){$("authNotice").textContent=result.error.message;return}if(signupMode&&!result.data.session){$("authNotice").textContent="Conta criada. Confirma o endereço de e-mail para activar o acesso.";return}user=result.data.user;await loadApp()});
 $("profileButton").addEventListener("click",async()=>{await supabase.auth.signOut();user=null;$("appView").classList.add("hidden");$("authView").classList.remove("hidden");toast("Sessão terminada.")});
 async function loadApp(){if(!user)return;$("authView").classList.add("hidden");$("appView").classList.remove("hidden");$("profileButton").textContent=(user.email||"L").slice(0,1).toUpperCase();const [d,s]=await Promise.all([supabase.from("science_departments").select("id,name,short_name,accent_color,description,display_order").eq("is_active",true).order("display_order"),supabase.from("science_student_state").select("*").eq("user_id",user.id)]);if(d.error){toast("Não foi possível carregar as escolas.");return}departments=d.data||[];states=s.data||[];renderOverview()}
 function stateFor(id){return states.find(s=>s.department_id===id)}
@@ -54,3 +54,18 @@ function showLesson(id){const l=phaseLessons.find(x=>x.id===id);if(!l)return;act
 
 async function openLevel(id){$("levelReader").classList.remove("hidden");$("levelTitle").textContent="A carregar nível…";$("levelLessonList").innerHTML="";$("levelLessonBody").innerHTML="";const {data:level,error}=await supabase.from("science_levels").select("id,title,summary,level_number,estimated_minutes,learning_objectives").eq("id",id).maybeSingle();if(error||!level){toast("Este nível ainda não está desbloqueado.");$("levelReader").classList.add("hidden");return}const {data:lessons}=await supabase.from("science_lessons").select("id,title,lesson_order,body_md,math_source").eq("level_id",id).eq("is_published",true).order("lesson_order");$("levelTitle").textContent="Nível "+String(level.level_number).padStart(2,"0")+" · "+level.title;$("levelMeta").textContent=level.estimated_minutes+" MIN · NOTA MÍNIMA 80%";if(!lessons?.length){$("levelLessonBody").innerHTML='<p class="muted">As aulas deste nível ainda estão em preparação.</p>';return}$("levelLessonList").innerHTML=lessons.map((l,i)=>'<button type="button" class="level-lesson-tab '+(i===0?"active":"")+'" data-lesson-id="'+l.id+'"><span>0'+(i+1)+'</span>'+safeHTML(l.title)+'</button>').join("");$("levelLessonList").querySelectorAll("[data-lesson-id]").forEach(btn=>btn.addEventListener("click",()=>renderLevelLesson(lessons.find(l=>l.id===btn.dataset.lessonId),btn)));renderLevelLesson(lessons[0],$("levelLessonList").querySelector("[data-lesson-id]"))}
 function renderLevelLesson(lesson,btn){$("levelLessonList").querySelectorAll(".level-lesson-tab").forEach(x=>x.classList.toggle("active",x===btn));$("levelLessonBody").innerHTML='<h4>'+safeHTML(lesson.title)+'</h4><div class="lesson-prose">'+renderLessonMarkdown(lesson.body_md)+'</div>';typesetMath($("levelLessonBody"))}
+
+// Restore the authenticated session after the email-confirmation redirect.
+supabase.auth.onAuthStateChange((_event, session) => {
+  if (session && !user) {
+    user = session.user;
+    Promise.resolve().then(() => loadApp());
+  }
+});
+(async () => {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session && !user) {
+    user = session.user;
+    await loadApp();
+  }
+})();
