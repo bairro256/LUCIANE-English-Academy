@@ -11,15 +11,32 @@
   <main class="shell">
     <header class="topbar">
       <a class="brand" href="#"><span class="brand-mark">L</span><span>LUCIANE <small>ENGLISH ACADEMY</small></span></a>
-      <span class="status"><i></i> Tutor de demonstração</span>
+      <span class="status" id="status"><i></i> Plataforma de aprendizagem</span>
     </header>
     <section class="hero">
       <p class="eyebrow">O TEU ESPAÇO DE APRENDIZAGEM</p>
       <h1>Aprende inglês.<br><em>Ganha confiança.</em></h1>
-      <p class="intro">Um tutor que acompanha o teu ritmo, explica em português e ajuda-te a comunicar em inglês.</p>
+      <p class="intro">Um tutor inteligente que acompanha o teu ritmo, explica em português e ajuda-te a comunicar em inglês.</p>
     </section>
-    <section class="workspace">
+
+    <section class="auth-panel" id="authPanel">
+      <div class="auth-copy"><p class="eyebrow">BEM-VINDO À LUCIANE</p><h2 id="authTitle">Entra na tua sala de aula</h2><p>Cria a tua conta ou inicia sessão para começares a aprender com o tutor de inglês.</p></div>
+      <form id="authForm">
+        <label for="fullName" id="nameLabel" hidden>Nome completo</label>
+        <input id="fullName" type="text" autocomplete="name" placeholder="O teu nome" hidden>
+        <label for="email">Endereço de Gmail ou e-mail</label>
+        <input id="email" type="email" autocomplete="email" placeholder="exemplo@gmail.com" required>
+        <label for="password">Palavra-passe</label>
+        <input id="password" type="password" autocomplete="current-password" placeholder="Mínimo de 6 caracteres" minlength="6" required>
+        <button class="send auth-submit" id="authSubmit" type="submit">Entrar na plataforma</button>
+        <p class="auth-error" id="authError" role="alert"></p>
+      </form>
+      <button class="auth-switch" id="authSwitch" type="button">Ainda não tens conta? Criar conta</button>
+    </section>
+
+    <section class="workspace" id="workspace" hidden>
       <aside class="settings">
+        <div class="account-row"><span id="studentName">Aluno</span><button id="logout" class="clear">Sair</button></div>
         <h2>Personaliza a aula</h2>
         <label for="level">O teu nível</label>
         <select id="level">
@@ -46,11 +63,11 @@
           <textarea id="prompt" rows="2" placeholder="Escreve a tua mensagem em inglês ou português..."></textarea>
           <div class="composer-actions"><button id="voice" class="icon-btn" title="Ditado por voz" aria-label="Ditado por voz">🎙</button><span id="hint">Enter para enviar · Shift + Enter para nova linha</span><button id="send" class="send">Enviar ↑</button></div>
         </div>
-        <p class="disclaimer">Versão de interface em desenvolvimento. As respostas desta demonstração não são geradas por IA.</p>
+        <p class="disclaimer" id="disclaimer">As respostas são geradas pelo tutor de inteligência artificial.</p>
       </section>
     </section>
     <footer>© LUCIANE English Academy · Learn with confidence.</footer>
   </main>
-  <script src="./app.js"></script>
+  <script type="module" src="./app.js"></script>
 </body>
 </html>
