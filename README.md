@@ -2,6 +2,15 @@
 
 Private source backup for the existing LUCIANE English Academy Wix site.
 
+## AI Tutor
+
+- **Tutor application:** https://nuovqgybrszacjlolacy.supabase.co/functions/v1/luciane-app
+- **Service status check:** https://nuovqgybrszacjlolacy.supabase.co/functions/v1/luciane-status
+- **AI endpoint:** https://nuovqgybrszacjlolacy.supabase.co/functions/v1/luciane-tutor
+- **Frontend source:** `tutor/`
+- The tutor app is served by a Supabase Edge Function and uses Supabase Auth plus the protected `luciane-tutor` function.
+- The status endpoint reports whether the private `OPENAI_API_KEY` secret is configured; it never returns the key itself.
+
 ## Backup
 
 - `wix-source-export.zip` — complete original Wix Code Store export.
@@ -9,9 +18,9 @@ Private source backup for the existing LUCIANE English Academy Wix site.
 - The archive contains the original project files: `app.js`, `index.html`, `styles.css`, `sw.js`, and `icon.svg`.
 - The archive was transferred from Wix and committed to this private repository.
 
-## Live website
+## Existing Wix website
 
-The live website remains hosted and published on Wix. Changes committed to this repository do not deploy to or modify the live site.
+The original website remains hosted on Wix. Deploying the separate AI Tutor does not modify the existing Wix site, its pages, or its accounts.
 
 ## Security
 
