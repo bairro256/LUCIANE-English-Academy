@@ -1,6 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.0";
 const SUPABASE_URL = "https://nuovqgybrszacjlolacy.supabase.co";
-const SUPABASE_KEY = "sb_publishable_9n4C6h05pCuwEO0qTQsoQ_cSyEvNGo";
+const SUPABASE_KEY = "sb_publishable_9n4nC6h05pCuwEO0qTQsoQ_cSyEvNGo";
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = (id) => document.getElementById(id);
 let signupMode = false, user = null, departments = [], states = [], activeDepartment = null, activeProblem = null, diagnosticSession = null, examClock = null, phaseLessons = [], activeLessonId = null, activeAssessmentType = null;
