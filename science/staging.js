@@ -17,7 +17,7 @@ const PHASE={refresh:"Refrescamento intensivo",foundation:"Área de Base",main:"
 function safeMarkdown(value){return DOMPurify.sanitize(marked.parse(String(value||"")),{USE_PROFILES:{html:true}})}
 function App(){
  const [session,setSession]=useState(null),[authReady,setAuthReady]=useState(false);
- const [signup,setSignup]=useState(false),[email,setEmail]=useState(""),[password,setPassword]=useState(""),[authNotice,setAuthNotice]=useState("");
+ const [signup,setSignup]=useState(false),[fullName,setFullName]=useState(""),[email,setEmail]=useState(""),[password,setPassword]=useState(""),[authNotice,setAuthNotice]=useState("");
  const [view,setView]=useState("dashboard"),[activeDepartment,setActiveDepartment]=useState("mathematics");
  const [departments,setDepartments]=useState([]),[states,setStates]=useState([]),[schoolState,setSchoolState]=useState(null);
  const [phaseLessons,setPhaseLessons]=useState([]),[selectedLesson,setSelectedLesson]=useState(null);
@@ -194,14 +194,14 @@ function App(){
   }catch(err){notify("Não foi possível gerar o PDF. Tenta novamente.");}
  }
  async function authSubmit(e){
-  e.preventDefault();setBusy(true);setAuthNotice("A validar acesso…");
-  const result=signup?await supabase.auth.signUp({email:email.trim(),password,options:{emailRedirectTo:location.origin+location.pathname+"#/dashboard"}}):await supabase.auth.signInWithPassword({email:email.trim(),password});
+  e.preventDefault();if(signup&&!fullName.trim()){setAuthNotice("Indica o teu nome completo.");return}setBusy(true);setAuthNotice("A validar acesso…");
+  const result=signup?await supabase.auth.signUp({email:email.trim(),password,options:{data:{full_name:fullName.trim()},emailRedirectTo:location.origin+location.pathname+"#/dashboard"}}):await supabase.auth.signInWithPassword({email:email.trim(),password});
   setBusy(false);
   if(result.error){setAuthNotice(result.error.message);return}
   if(signup&&!result.data.session){setAuthNotice("Conta criada. Confirma o endereço de e-mail para activar o acesso.");return}
   setAuthNotice("");setView("dashboard");location.hash="#/dashboard";
  }
- async function signOut(){await supabase.auth.signOut();setSession(null);setView("dashboard");location.hash="#/dashboard";setEmail("");setPassword("")}
+ async function signOut(){await supabase.auth.signOut();setSession(null);setView("dashboard");location.hash="#/dashboard";setEmail("");setPassword("");setFullName("")}
  const route=(v)=>{setView(v);if(v==="dashboard")location.hash="#/dashboard"};
  const currentLesson=selectedLesson||selectedLevelLesson;
  if(!authReady)return h("div",{className:"boot"},"LUCIANE ",h("span",null,"ACADEMIC SCIENCES"),h("small",null,"A preparar o ambiente académico…"));
@@ -209,7 +209,7 @@ function App(){
   h("section",{className:"auth-brand"},h("div",{className:"brand"},h("span",{className:"seal"},"L"),"LUCIANE",h("small",null,"ACADEMIC SCIENCES")),
    h("div",{className:"auth-copy"},h("p",{className:"eyebrow"},"ECOSSISTEMA ACADÉMICO · CIÊNCIAS EXACTAS"),h("h1",null,"Conhecimento exige ",h("em",null,"método.")),h("p",null,"Três escolas. Um percurso académico rigoroso. Do domínio das bases à competência científica avançada."),h("div",{className:"disciplines"},h("span",null,"01 / MATEMÁTICA"),h("span",null,"02 / FÍSICA"),h("span",null,"03 / QUÍMICA"))),h("div",{className:"auth-foot"},"LUCIANE ACADEMIC SCIENCES · ANGOLA")),
   h("section",{className:"auth-panel"},h("form",{className:"auth-card",onSubmit:authSubmit},h("p",{className:"eyebrow"},"PORTAL DO ESTUDANTE"),h("h2",null,signup?"Criar perfil académico":"A tua jornada começa aqui."),h("p",{className:"muted"},signup?"Uma conta. Três escolas. Um histórico individual.":"Acede ao teu espaço académico individual."),
-   h("label",null,"Endereço de e-mail"),h("input",{type:"email",value:email,onChange:e=>setEmail(e.target.value),required:true,autoComplete:"email",placeholder:"nome@exemplo.com"}),
+   signup?h("label",null,"Nome completo"),signup?h("input",{type:"text",value:fullName,onChange:e=>setFullName(e.target.value),required:true,autoComplete:"name",placeholder:"Nome e apelido"}):null,h("label",null,"Endereço de e-mail"),h("input",{type:"email",value:email,onChange:e=>setEmail(e.target.value),required:true,autoComplete:"email",placeholder:"nome@exemplo.com"}),
    h("label",null,"Palavra-passe"),h("input",{type:"password",value:password,onChange:e=>setPassword(e.target.value),required:true,minLength:8,autoComplete:signup?"new-password":"current-password",placeholder:"Mínimo de 8 caracteres"}),
    h("button",{className:"btn",type:"submit",disabled:busy},busy?"A validar…":signup?"Criar conta académica ↗":"Entrar no ecossistema ↗"),
    h("div",{className:"switch"},signup?"Já tens uma conta? ":"Ainda não tens uma conta? ",h("button",{className:"link",type:"button",onClick:()=>{setSignup(!signup);setAuthNotice("")}},signup?"Entrar":"Criar conta")),
