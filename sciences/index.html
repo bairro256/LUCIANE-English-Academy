@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="pt-AO">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#101c2c">
+  <meta name="description" content="Ecossistema Académico LUCIANE — Matemática, Física e Química.">
+  <title>Ecossistema Académico LUCIANE</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css">
+  <link rel="stylesheet" href="./science.css">\n  <link rel="stylesheet" href="./premium-science.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/contrib/auto-render.min.js"></script>
+  <script defer src="./science.js" type="module"></script>
+</head>
+<body>
+  <div class="grain"></div>
+  <div id="authView" class="auth-shell">
+    <div class="auth-brand">
+      <a class="wordmark" href="./"><span class="brand-seal">L</span><span>LUCIANE<small>ACADEMIC SCIENCES</small></span></a>
+      <div class="auth-copy">
+        <p class="eyebrow">ECOSSISTEMA ACADÉMICO · CIÊNCIAS EXACTAS</p>
+        <h1>Conhecimento exige<br><em>método.</em></h1>
+        <p class="auth-lead">Três escolas. Um percurso académico rigoroso. Do domínio das bases à competência científica avançada.</p>
+        <div class="auth-disciplines"><span>01 / MATEMÁTICA</span><span>02 / FÍSICA</span><span>03 / QUÍMICA</span></div>
+      </div>
+      <div class="auth-foot">LUCIANE ACADEMIC SCIENCES <span>·</span> ANGOLA</div>
+    </div>
+    <section class="auth-panel">
+      <div class="auth-panel-inner">
+        <div class="mobile-mark">LUCIANE <span>ACADEMIC SCIENCES</span></div>
+        <p class="eyebrow">PORTAL DO ESTUDANTE</p>
+        <h2 id="authTitle">A tua jornada começa aqui.</h2>
+        <p class="muted" id="authSubtitle">Acede ao teu espaço académico individual.</p>
+        <form id="authForm">
+          <label for="email">Endereço de e-mail</label>
+          <input id="email" type="email" autocomplete="email" placeholder="nome@exemplo.com" required>
+          <label for="password">Palavra-passe</label>
+          <input id="password" type="password" autocomplete="current-password" placeholder="Mínimo de 8 caracteres" minlength="8" required>
+          <button class="primary-btn" id="authSubmit" type="submit">Entrar no ecossistema <span>↗</span></button>
+        </form>
+        <div class="auth-switch"><span id="switchText">Ainda não tens uma conta?</span> <button id="switchMode" type="button">Criar conta</button></div>
+        <p class="auth-notice" id="authNotice" role="status"></p>
+        <div class="secure-note"><span class="secure-dot"></span> Sessão protegida · Histórico académico individual</div>
+      </div>
+    </section>
+  </div>
+
+  <div id="appView" class="app-shell hidden">
+    <aside class="sidebar">
+      <a class="wordmark side-wordmark" href="#"><span class="brand-seal">L</span><span>LUCIANE<small>ACADEMIC SCIENCES</small></span></a>
+      <div class="side-label">AMBIENTE ACADÉMICO</div>
+      <nav class="side-nav">
+        <button class="nav-item active" data-view="overview"><span class="nav-icon">⌂</span> Visão geral</button>
+        <div class="side-label nav-section-label">ESCOLAS</div>
+        <button class="nav-item" data-department="mathematics"><span class="nav-mark math-mark"></span> Matemática <span class="nav-code">MAT</span></button>
+        <button class="nav-item" data-department="physics"><span class="nav-mark physics-mark"></span> Física <span class="nav-code">FIS</span></button>
+        <button class="nav-item" data-department="chemistry"><span class="nav-mark chemistry-mark"></span> Química <span class="nav-code">QUI</span></button>
+        <div class="side-label nav-section-label">REGISTO ACADÉMICO</div>
+        <button class="nav-item" data-view="record"><span class="nav-icon">▤</span> Boletim & histórico</button>
+        <button class="nav-item" data-view="certificates"><span class="nav-icon">◇</span> Certificações</button>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="institution-seal">L</div>
+        <div><strong>Rigor. Método. Domínio.</strong><small>Formação científica progressiva</small></div>
+      </div>
+    </aside>
+
+    <main class="main-area">
+      <header class="topbar">
+        <div class="crumb"><span>LUCIANE</span><b>/</b><strong id="crumbCurrent">Visão geral</strong></div>
+        <div class="top-actions"><span class="system-status"><i></i> SISTEMA ACADÉMICO</span><button class="avatar" id="profileButton" aria-label="Terminar sessão">—</button></div>
+      </header>
+
+      <section id="overviewView" class="page-view">
+        <div class="hero-banner">
+          <div class="hero-text">
+            <p class="eyebrow light-eyebrow">PLATAFORMA DE FORMAÇÃO CIENTÍFICA</p>
+            <h1>O domínio não se<br>presume. <em>Comprova-se.</em></h1>
+            <p>Um percurso estruturado de 100 níveis, com avaliação contínua, prática deliberada e progressão baseada em competência.</p>
+            <div class="hero-meta"><span>03 ESCOLAS INDEPENDENTES</span><span>100 NÍVEIS POR DISCIPLINA</span><span>01 HISTÓRICO INDIVIDUAL</span></div>
+          </div>
+          <div class="hero-graphic" aria-hidden="true">
+            <div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><div class="orbit orbit-three"></div>
+            <div class="orbit-core"><span>LA</span><small>SCIENCE<br>INSTITUTE</small></div>
+            <span class="formula formula-a">∫ f(x) dx</span><span class="formula formula-b">F = ma</span><span class="formula formula-c">H₂O</span>
+          </div>
+        </div>
+
+        <div class="section-heading">
+          <div><p class="eyebrow">O TEU ESPAÇO DE APRENDIZAGEM</p><h2>Escolas científicas</h2><p class="section-desc">Cada departamento possui currículo, avaliações e progressão próprios.</p></div>
+          <span class="section-index">01 — 03</span>
+        </div>
+        <div class="school-grid" id="schoolGrid">
+          <article class="school-card math-card"><div class="school-top"><span class="school-number">01</span><span class="school-code">MAT / 100</span></div><div class="school-symbol">∑</div><h3>Escola de Matemática</h3><p>Da aritmética e álgebra ao cálculo, análise e estruturas matemáticas.</p><div class="school-bottom"><span class="school-status">A carregar percurso…</span><button data-department="mathematics" aria-label="Abrir Escola de Matemática">↗</button></div></article>
+          <article class="school-card physics-card"><div class="school-top"><span class="school-number">02</span><span class="school-code">FIS / 100</span></div><div class="school-symbol">Φ</div><h3>Escola de Física</h3><p>Da mecânica clássica ao electromagnetismo e à física moderna.</p><div class="school-bottom"><span class="school-status">A carregar percurso…</span><button data-department="physics" aria-label="Abrir Escola de Física">↗</button></div></article>
+          <article class="school-card chemistry-card"><div class="school-top"><span class="school-number">03</span><span class="school-code">QUI / 100</span></div><div class="school-symbol">⚗</div><h3>Escola de Química</h3><p>Da estrutura atómica à físico-química e à química orgânica avançada.</p><div class="school-bottom"><span class="school-status">A carregar percurso…</span><button data-department="chemistry" aria-label="Abrir Escola de Química">↗</button></div></article>
+        </div>
+
+        <div class="lower-grid">
+          <section class="panel progress-panel"><div class="panel-heading"><div><p class="eyebrow">REGISTO INDIVIDUAL</p><h3>Panorama académico</h3></div><span class="panel-icon">▥</span></div><div id="progressRows" class="progress-rows"><p class="muted">Inicia uma escola para acompanhar a tua evolução.</p></div></section>
+          <section class="panel method-panel"><p class="eyebrow">MÉTODO LUCIANE</p><h3>Aprender. Praticar.<br><em>Demonstrar.</em></h3><div class="method-steps"><div><b>01</b><span>Diagnóstico rigoroso</span></div><div><b>02</b><span>Recuperação das bases</span></div><div><b>03</b><span>Domínio dos 100 níveis</span></div></div></section>
+        </div>
+      </section>
+
+      <section id="departmentView" class="page-view hidden">
+        <div class="department-head" id="departmentHead"></div>
+        <div class="phase-panel panel">
+          <div class="panel-heading"><div><p class="eyebrow">MOTOR DE NIVELAMENTO</p><h3>Percurso obrigatório de progressão</h3></div><span class="phase-locked">PROGRESSÃO CONTROLADA</span></div>
+          <div class="phase-track">
+            <div class="phase-step current"><span>00</span><b>Refrescamento</b><small>Revisão e triagem</small></div><i></i>
+            <div class="phase-step"><span>01</span><b>Área de Base</b><small>Recuperação rigorosa</small></div><i></i>
+            <div class="phase-step"><span>02</span><b>Curso Principal</b><small>Níveis 01 — 100</small></div>
+          </div>
+          <div id="phaseNotice" class="phase-notice"></div>
+        </div>
+        <section id="lessonStudio" class="panel lesson-studio hidden"><div class="panel-heading"><div><p class="eyebrow">BIBLIOTECA PEDAGÓGICA · MATEMÁTICA</p><h3 id="lessonPhaseTitle">Aulas estruturadas</h3></div><span id="lessonCount" class="lesson-count"></span></div><div class="lesson-layout"><nav id="lessonList" class="lesson-list" aria-label="Lista de aulas"></nav><article id="lessonReader" class="lesson-reader"><div class="lesson-empty"><span>01 / AULA</span><h4>Selecciona uma aula para começar.</h4><p>Teoria, exemplos resolvidos e questões de verificação.</p></div></article></div></section>
+        <section id="practiceLab" class="panel practice-lab hidden"><div class="panel-heading"><div><p class="eyebrow">LABORATÓRIO DE PRÁTICA · MATEMÁTICA</p><h3>Treino dinâmico</h3></div><span class="practice-live">PRÁTICA ILIMITADA</span></div><p class="practice-intro">Resolve exercícios gerados automaticamente. Cada resposta é corrigida no servidor e acompanhada da respectiva resolução.</p><div id="practiceTopic" class="practice-topic">Aguardando exercício</div><div id="practiceQuestion" class="practice-question">Selecciona «Novo exercício» para começar.</div><form id="practiceForm" class="practice-answer"><input id="practiceAnswer" type="text" inputmode="decimal" autocomplete="off" placeholder="Escreve a tua resposta" required><button class="primary-btn" id="practiceSubmit" type="submit">Corrigir resposta <span>↗</span></button></form><div id="practiceFeedback" class="practice-feedback" aria-live="polite"></div><button id="nextPractice" class="secondary-btn" type="button">Novo exercício <span>＋</span></button></section>
+        <section id="diagnosticPanel" class="panel diagnostic-panel"><div class="diagnostic-copy"><p class="eyebrow">ETAPA OBRIGATÓRIA · 20 MINUTOS</p><h3>Prova de nivelamento</h3><p>10 questões geradas para esta sessão. Aprovação a partir de 75%. O tempo e a submissão são validados pelo servidor.</p></div><button id="startDiagnostic" class="primary-btn diagnostic-start" type="button">Iniciar avaliação <span>↗</span></button><div id="diagnosticExam" class="diagnostic-exam hidden"><div class="exam-topline"><span>AVALIAÇÃO DIAGNÓSTICA</span><strong id="examTimer">20:00</strong></div><form id="diagnosticForm"><div id="diagnosticQuestions"></div><button class="primary-btn" id="submitDiagnostic" type="submit">Submeter avaliação <span>↗</span></button></form><div id="diagnosticResult" class="diagnostic-result" aria-live="polite"></div></div></section>
+        <div class="section-heading curriculum-heading"><div><p class="eyebrow">MAPA CURRICULAR</p><h2>Os 100 níveis</h2><p class="section-desc">Quatro ciclos académicos sequenciais. Nenhum nível é desbloqueado sem aprovação.</p></div><span class="section-index">100 / LEVELS</span></div>
+        <div class="cycle-grid" id="cycleGrid"></div><section id="levelReader" class="panel level-reader hidden"><div class="panel-heading"><div><p class="eyebrow">CURSO PRINCIPAL · MATEMÁTICA</p><h3 id="levelTitle">Nível</h3></div><span id="levelMeta" class="lesson-count"></span></div><div id="levelLessonList" class="level-lesson-list"></div><article id="levelLessonBody" class="level-lesson-body"></article></section>
+      </section>
+
+      <section id="recordView" class="page-view hidden">
+        <div class="section-heading record-title"><div><p class="eyebrow">TRANSCRIPT & PERFORMANCE</p><h2>Boletim académico</h2><p class="section-desc">O registo individual das tuas avaliações e evolução nas três escolas.</p></div></div>
+        <div id="recordContent" class="panel record-panel"><p class="muted">Ainda não existem registos académicos. Inicia uma escola para começar o teu percurso.</p></div>
+      </section>
+      <section id="certificatesView" class="page-view hidden">
+        <div class="section-heading record-title"><div><p class="eyebrow">CREDENCIAIS VERIFICÁVEIS</p><h2>Certificações</h2><p class="section-desc">Certificados emitidos após conclusão integral e validação académica.</p></div></div>
+        <div id="certificateContent" class="panel record-panel"><div class="empty-cert"><span>◇</span><h3>A tua primeira credencial começa com o primeiro nível.</h3><p>Os certificados serão emitidos após a conclusão dos 100 níveis de cada escola, com código único e validação pública.</p></div></div>
+      </section>
+      <footer class="app-footer"><span>LUCIANE ACADEMIC SCIENCES</span><span>RIGOR ACADÉMICO · PROGRESSÃO COMPROVADA</span><span>© 2026</span></footer>
+    </main>
+  </div>
+  <div id="toast" class="toast" role="status"></div>
+</body>
+</html>
