@@ -16,6 +16,19 @@
 </head>
 <body>
 <div id="root"><div class="boot">LUCIANE <span>ACADEMIC SCIENCES</span><small>A preparar o ambiente académico…</small></div></div>
+<script>
+(function(){
+ const root=document.getElementById("root");
+ function fail(message){
+  if(root && root.dataset.ready!=="true"){
+   root.innerHTML='<div class="boot">LUCIANE <span>ACADEMIC SCIENCES</span><small style="max-width:320px;line-height:1.6;margin:16px auto 0">A aplicação não conseguiu iniciar. Verifica a ligação à internet e recarrega a página. Detalhe: '+String(message||"falha ao carregar os módulos").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))+'</small></div>';
+  }
+ }
+ window.addEventListener("error",function(e){if(e.target&&e.target.tagName==="SCRIPT")fail("módulo não carregado: "+(e.target.src||"script"));else if(e.message)fail(e.message)},true);
+ window.addEventListener("unhandledrejection",function(e){fail(e.reason&&e.reason.message||"erro de ligação ou autenticação")});
+ window.setTimeout(function(){if(root&&root.dataset.ready!=="true")fail("tempo de inicialização excedido")},18000);
+})();
+</script>
 <script type="module" src="./staging.js"></script>
 </body>
 </html>
