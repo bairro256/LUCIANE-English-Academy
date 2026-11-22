@@ -228,4 +228,6 @@ function App(){
    h("footer",{className:"footer"},h("span",null,"LUCIANE ACADEMIC SCIENCES"),h("span",null,"REACT STAGING · MATEMÁTICA"),h("span",null,"© 2026"))),
   toast?h("div",{className:"toast"},toast):null);
 }
-createRoot(document.getElementById("root")).render(h(App));
+const appRoot=document.getElementById("root");
+createRoot(appRoot).render(h(App));
+requestAnimationFrame(()=>{appRoot.dataset.ready="true"});
