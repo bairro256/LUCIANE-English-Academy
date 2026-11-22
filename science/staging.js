@@ -64,6 +64,7 @@ function App(){
   if(!user){setView("auth");return}
   setActiveDepartment("mathematics");setView("school");location.hash="#/escola/matematica";
   let st=stateFor("mathematics");
+  if(!st){const existing=await supabase.from("science_student_state").select("*").eq("user_id",user.id).eq("department_id","mathematics").maybeSingle();st=existing.data||null}
   if(!st){
    setBusy(true);
    const {data,error}=await supabase.functions.invoke("science-enroll",{body:{department_id:"mathematics"}});
