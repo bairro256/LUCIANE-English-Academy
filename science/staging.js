@@ -3,6 +3,8 @@ import {createRoot} from "https://esm.sh/react-dom@18.3.1/client";
 import {createClient} from "https://esm.sh/@supabase/supabase-js@2.57.0";
 import {marked} from "https://esm.sh/marked@15.0.7";
 import DOMPurify from "https://esm.sh/dompurify@3.2.6";
+import {jsPDF} from "https://esm.sh/jspdf@2.5.2";
+import QRCode from "https://esm.sh/qrcode@1.5.4?bundle";
 
 const h=React.createElement;
 const supabase=createClient("https://nuovqgybrszacjlolacy.supabase.co","sb_publishable_9n4nC6h05pCuwEO0qTQsoQ_cSyEvNGo",{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
@@ -22,7 +24,7 @@ function App(){
  const [levels,setLevels]=useState([]),[activeLevel,setActiveLevel]=useState(null),[levelLessons,setLevelLessons]=useState([]),[selectedLevelLesson,setSelectedLevelLesson]=useState(null);
  const [practice,setPractice]=useState(null),[practiceAnswer,setPracticeAnswer]=useState(""),[practiceFeedback,setPracticeFeedback]=useState("");
  const [exam,setExam]=useState(null),[examAnswers,setExamAnswers]=useState([]),[remaining,setRemaining]=useState(0),[examResult,setExamResult]=useState(null);
- const [record,setRecord]=useState([]),[certificates,setCertificates]=useState([]);
+ const [record,setRecord]=useState([]),[certificates,setCertificates]=useState([]),[profileName,setProfileName]=useState("");
  const [busy,setBusy]=useState(false),[toast,setToast]=useState("");
  const user=session?.user||null;
  const currentPhase=schoolState?.phase||"refresh";
@@ -144,8 +146,43 @@ function App(){
  }
  async function openCertificates(){
   setView("certificates");location.hash="#/certificados";
-  const {data,error}=await supabase.from("science_certificates").select("certificate_code,department_id,average_score,workload_hours,issued_at,revoked_at").eq("user_id",user.id);
-  if(error){notify("Não foi possível carregar certificados.");return}setCertificates(data||[]);
+  const [{data,error},{data:profile}]=await Promise.all([
+   supabase.from("science_certificates").select("certificate_code,verification_hash,department_id,average_score,workload_hours,issued_at,revoked_at,curriculum_snapshot").eq("user_id",user.id),
+   supabase.from("profiles").select("full_name").eq("id",user.id).maybeSingle()
+  ]);
+  if(error){notify("Não foi possível carregar certificados.");return}
+  setProfileName(profile?.full_name||user.user_metadata?.full_name||user.email||"Estudante");
+  setCertificates(data||[]);
+ }
+ async function downloadCertificate(c){
+  if(c.revoked_at){notify("Este certificado foi revogado.");return}
+  try{
+   const verifyUrl="https://nuovqgybrszacjlolacy.supabase.co/functions/v1/science-certificate?code="+encodeURIComponent(c.certificate_code)+"&hash="+encodeURIComponent(c.verification_hash);
+   const qr=await QRCode.toDataURL(verifyUrl,{width:420,margin:1,errorCorrectionLevel:"H"});
+   const pdf=new jsPDF({orientation:"landscape",unit:"mm",format:"a4"});
+   pdf.setProperties({title:"Certificado "+c.certificate_code,subject:"LUCIANE Academic Sciences — Matemática",creator:"LUCIANE Academic Sciences"});
+   pdf.setFillColor(248,247,242);pdf.rect(0,0,297,210,"F");
+   pdf.setDrawColor(177,138,74);pdf.setLineWidth(1.2);pdf.rect(9,9,279,192);
+   pdf.setDrawColor(30,48,68);pdf.setLineWidth(.35);pdf.rect(13,13,271,184);
+   pdf.setTextColor(35,49,66);pdf.setFont("times","bold");pdf.setFontSize(13);pdf.text("LUCIANE ACADEMIC SCIENCES",148.5,31,{align:"center"});
+   pdf.setTextColor(177,138,74);pdf.setFontSize(10);pdf.text("ANGOLA · FORMAÇÃO CIENTÍFICA",148.5,38,{align:"center"});
+   pdf.setTextColor(35,49,66);pdf.setFont("times","bold");pdf.setFontSize(27);pdf.text("CERTIFICADO DE CONCLUSÃO",148.5,61,{align:"center"});
+   pdf.setFont("times","normal");pdf.setFontSize(13);pdf.text("Certificamos que",148.5,79,{align:"center"});
+   pdf.setTextColor(25,42,62);pdf.setFont("times","bold");pdf.setFontSize(25);pdf.text(profileName||"Estudante",148.5,96,{align:"center",maxWidth:210});
+   pdf.setFont("times","normal");pdf.setFontSize(13);
+   pdf.text("concluiu com aproveitamento o Percurso Integral de Matemática,",148.5,111,{align:"center"});
+   pdf.text("composto por 100 níveis e quatro ciclos de formação académica.",148.5,119,{align:"center"});
+   pdf.setFont("helvetica","bold");pdf.setFontSize(11);pdf.text("MÉDIA FINAL: "+Number(c.average_score).toFixed(1)+"%",148.5,137,{align:"center"});
+   pdf.setFont("helvetica","normal");pdf.setFontSize(10);
+   const issued=new Date(c.issued_at).toLocaleDateString("pt-PT",{day:"2-digit",month:"long",year:"numeric",timeZone:"Africa/Luanda"});
+   pdf.text("Carga horária registada: "+Number(c.workload_hours).toFixed(2)+" horas",148.5,146,{align:"center"});
+   pdf.text("Emitido em "+issued,148.5,154,{align:"center"});
+   pdf.setFont("helvetica","bold");pdf.setFontSize(8);pdf.text("CÓDIGO DE AUTENTICIDADE",148.5,171,{align:"center"});
+   pdf.text(c.certificate_code,148.5,177,{align:"center"});
+   pdf.addImage(qr,"PNG",238,135,34,34);
+   pdf.setFont("helvetica","normal");pdf.setFontSize(7);pdf.text("LER PARA VALIDAR",255,173,{align:"center"});
+   pdf.save(c.certificate_code+".pdf");
+  }catch(err){notify("Não foi possível gerar o PDF. Tenta novamente.");}
  }
  async function authSubmit(e){
   e.preventDefault();setBusy(true);setAuthNotice("A validar acesso…");
@@ -217,7 +254,7 @@ function App(){
  const recordContent=h("section",{className:"panel"},h("div",{className:"panel-head"},h("h3",null,"Boletim académico"),h("span",{className:"tag"},"HISTÓRICO INDIVIDUAL")),
   record.length?record.map((r,i)=>h("div",{className:"record-row",key:i},h("span",null,"Nível concluído · "+r.level_id),h("strong",null,"Exame "+(r.exam_best_score??"—")+"% · "+r.attempts_count+" tentativas"))):h("div",{className:"empty"},"Ainda não existem níveis concluídos."));
  const certContent=h("section",{className:"panel"},h("div",{className:"panel-head"},h("h3",null,"Certificações"),h("span",{className:"tag"},"CREDENCIAIS VERIFICÁVEIS")),
-  certificates.length?certificates.map((c,i)=>h("div",{className:"record-row",key:i},h("strong",null,c.certificate_code),h("span",null,"Média "+c.average_score+"%"))):h("div",{className:"empty"},"Os certificados são emitidos após a conclusão e validação do percurso completo."));
+  certificates.length?certificates.map((c,i)=>h("div",{className:"record-row certificate-row",key:i},h("div",null,h("strong",null,c.certificate_code),h("span",null,"Média "+Number(c.average_score).toFixed(1)+"% · "+Number(c.workload_hours).toFixed(2)+" h")),h("button",{className:"primary-btn",disabled:!!c.revoked_at,onClick:()=>downloadCertificate(c)},"Descarregar PDF"))):h("div",{className:"empty"},"Os certificados são emitidos automaticamente após a aprovação no exame final do Nível 100."));
  return h("div",{className:"shell"},
   h("aside",{className:"sidebar"},h("div",{className:"brand side-brand"},h("span",{className:"seal"},"L"),h("span",null,"LUCIANE",h("small",null,"ACADEMIC SCIENCES"))),
    h("div",{className:"side-label"},"AMBIENTE ACADÉMICO"),
