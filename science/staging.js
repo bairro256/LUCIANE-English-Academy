@@ -163,17 +163,35 @@ function App(){
   h("div",{className:"phase-step "+(currentPhase==="refresh"?"current":"")},h("span",null,"00"),h("b",null,"Refrescamento"),h("small",null,"Revisão e triagem")),
   h("i"),h("div",{className:"phase-step "+(currentPhase==="foundation"?"current":"")},h("span",null,"01"),h("b",null,"Área de Base"),h("small",null,"Recuperação rigorosa")),
   h("i"),h("div",{className:"phase-step "+(currentPhase==="main"?"current":"")},h("span",null,"02"),h("b",null,"Curso Principal"),h("small",null,"Níveis 01 — 100")));
- const lessonPanel=h("section",{className:"panel"},h("div",{className:"panel-head"},h("h3",null,PHASE[currentPhase]||"Aulas estruturadas"),h("span",{className:"tag"},phaseLessons.length+" AULAS")),
-  phaseLessons.length?h("div",{className:"lesson-layout"},h("nav",{className:"lesson-list"},phaseLessons.map(l=>h("button",{key:l.id,className:"lesson-choice "+(selectedLesson?.id===l.id?"active":""),onClick:()=>setSelectedLesson(l)},h("span",null,String(l.lesson_number).padStart(2,"0")),h("b",null,l.title))),
-   h("article",{className:"lesson-reader"},selectedLesson?h(React.Fragment,null,h("div",{className:"lesson-meta"},"AULA "+String(selectedLesson.lesson_number).padStart(2,"0")+" · "+selectedLesson.estimated_minutes+" MIN"),h("h2",null,selectedLesson.title),h("div",{className:"md-content",dangerouslySetInnerHTML:{__html:safeMarkdown(selectedLesson.body_md)}})):h("div",{className:"empty"},"Selecciona uma aula.")))
-  :h("div",{className:"empty"},"Não existem aulas publicadas nesta fase."));)
- const levelPanel=h("section",{className:"panel"},h("div",{className:"panel-head"},h("h3",null,"Mapa curricular · 100 níveis"),h("span",{className:"tag"},"NÍVEL ACTUAL "+String(schoolState?.current_level||0).padStart(2,"0"))),
-  h("p",{className:"muted"},"Só o próximo nível sequencial fica disponível. Cada nível exige aprovação mínima de 80%."),
-  h("div",{className:"level-grid"},levels.map(l=>{const allowed=l.level_number<=nextLevel;return h("div",{className:"level-card",key:l.id},h("div",null,h("strong",null,"Nível "+String(l.level_number).padStart(2,"0")),h("div",null,h("small",null,l.title))),h("button",{className:"btn "+(allowed?"":"secondary"),disabled:!allowed||busy,onClick:()=>openLevel(l)},allowed?"Abrir ↗":"Bloqueado"))})),
-  activeLevel?h("div",{className:"panel"},h("div",{className:"panel-head"},h("h3",null,"Nível "+String(activeLevel.level_number).padStart(2,"0")+" · "+activeLevel.title),h("span",{className:"tag"},"80% PARA APROVAR")),
-   levelLessons.length?h("div",{className:"lesson-layout"},h("nav",{className:"lesson-list"},levelLessons.map(l=>h("button",{key:l.id,className:"lesson-choice "+(selectedLevelLesson?.id===l.id?"active":""),onClick:()=>setSelectedLevelLesson(l)},h("span",null,String(l.lesson_order).padStart(2,"0")),h("b",null,l.title))),
-    h("article",{className:"lesson-reader"},selectedLevelLesson?h(React.Fragment,null,h("h2",null,selectedLevelLesson.title),h("div",{className:"md-content",dangerouslySetInnerHTML:{__html:safeMarkdown(selectedLevelLesson.body_md)}})):h("div",{className:"empty"},"Selecciona uma aula.")))
-   :h("div",{className:"empty"},"Este nível ainda não tem aulas publicadas.")):null));
+  const lessonPanel=h("section",{className:"panel"},
+   h("div",{className:"panel-head"},h("h3",null,PHASE[currentPhase]||"Aulas estruturadas"),h("span",{className:"tag"},phaseLessons.length+" AULAS")),
+   phaseLessons.length
+    ? h("div",{className:"lesson-layout"},
+       h("nav",{className:"lesson-list"},phaseLessons.map(l=>h("button",{key:l.id,className:"lesson-choice "+(selectedLesson?.id===l.id?"active":""),onClick:()=>setSelectedLesson(l)},h("span",null,String(l.lesson_number).padStart(2,"0")),h("b",null,l.title)))),
+       h("article",{className:"lesson-reader"},selectedLesson
+        ? h(React.Fragment,null,h("div",{className:"lesson-meta"},"AULA "+String(selectedLesson.lesson_number).padStart(2,"0")+" · "+selectedLesson.estimated_minutes+" MIN"),h("h2",null,selectedLesson.title),h("div",{className:"md-content",dangerouslySetInnerHTML:{__html:safeMarkdown(selectedLesson.body_md)}}))
+        : h("div",{className:"empty"},"Selecciona uma aula."))
+      )
+    : h("div",{className:"empty"},"Não existem aulas publicadas nesta fase.")
+  );
+  const levelPanel=h("section",{className:"panel"},
+   h("div",{className:"panel-head"},h("h3",null,"Mapa curricular · 100 níveis"),h("span",{className:"tag"},"NÍVEL ACTUAL "+String(schoolState?.current_level||0).padStart(2,"0"))),
+   h("p",{className:"muted"},"Só o próximo nível sequencial fica disponível. Cada nível exige aprovação mínima de 80%."),
+   h("div",{className:"level-grid"},levels.map(l=>{const allowed=l.level_number<=nextLevel;return h("div",{className:"level-card",key:l.id},h("div",null,h("strong",null,"Nível "+String(l.level_number).padStart(2,"0")),h("div",null,h("small",null,l.title))),h("button",{className:"btn "+(allowed?"":"secondary"),disabled:!allowed||busy,onClick:()=>openLevel(l)},allowed?"Abrir ↗":"Bloqueado"))})),
+   activeLevel
+    ? h("div",{className:"panel"},
+       h("div",{className:"panel-head"},h("h3",null,"Nível "+String(activeLevel.level_number).padStart(2,"0")+" · "+activeLevel.title),h("span",{className:"tag"},"80% PARA APROVAR")),
+       levelLessons.length
+        ? h("div",{className:"lesson-layout"},
+           h("nav",{className:"lesson-list"},levelLessons.map(l=>h("button",{key:l.id,className:"lesson-choice "+(selectedLevelLesson?.id===l.id?"active":""),onClick:()=>setSelectedLevelLesson(l)},h("span",null,String(l.lesson_order).padStart(2,"0")),h("b",null,l.title)))),
+           h("article",{className:"lesson-reader"},selectedLevelLesson
+            ? h(React.Fragment,null,h("h2",null,selectedLevelLesson.title),h("div",{className:"md-content",dangerouslySetInnerHTML:{__html:safeMarkdown(selectedLevelLesson.body_md)}}))
+            : h("div",{className:"empty"},"Selecciona uma aula."))
+          )
+        : h("div",{className:"empty"},"Este nível ainda não tem aulas publicadas.")
+      )
+    : null
+  );
  const practicePanel=h("section",{className:"panel"},h("div",{className:"panel-head"},h("h3",null,"Laboratório de prática"),h("span",{className:"tag"},"GERAÇÃO ALGORÍTMICA")),
   h("p",{className:"muted"},"Exercícios variáveis, correcção individual e resolução explicada. Não depende de créditos de IA."),
   practice?h("div",null,h("div",{className:"lesson-meta"},practice.topic_code||"PRÁTICA"),h("div",{className:"practice-question"},practice.question),h("form",{className:"practice-form",onSubmit:answerPractice},h("input",{value:practiceAnswer,onChange:e=>setPracticeAnswer(e.target.value),placeholder:"A tua resposta",required:true}),h("button",{className:"btn",disabled:busy,type:"submit"},busy?"A corrigir…":"Corrigir resposta"))):h("button",{className:"btn",onClick:newPractice,disabled:busy},busy?"A gerar…":"Novo exercício +"),
