@@ -137,7 +137,16 @@ function App(){
   const {data,error}=await supabase.functions.invoke("science-assessment",{body:{action:"submit",department_id:"mathematics",session_id:exam.id,answers:examAnswers}});
   setBusy(false);
   if(error||data?.error){notify(data?.error||error?.message||"Falha ao submeter.");return}
-  setExam(null);const st=await refreshSchoolState();await loadPhaseContent(st);await loadDashboard();setExamResult(data);
+  setExam(null);const st=await refreshSchoolState();await loadPhaseContent(st);await loadDashboard();
+  if(data.certificate){
+   const [{data:profile},{data:certs}]=await Promise.all([
+    supabase.from("profiles").select("full_name").eq("id",user.id).maybeSingle(),
+    supabase.from("science_certificates").select("certificate_code,verification_hash,department_id,average_score,workload_hours,issued_at,revoked_at,curriculum_snapshot").eq("user_id",user.id)
+   ]);
+   setProfileName(profile?.full_name||user.user_metadata?.full_name||user.email||"Estudante");setCertificates(certs||[]);
+   notify("Certificado final emitido com código e QR de verificação.");
+  }
+  setExamResult(data);
  }
  async function openRecord(){
   setView("record");location.hash="#/boletim";
@@ -246,7 +255,7 @@ function App(){
   practiceFeedback?h("p",{className:"feedback"},practiceFeedback):null);
  const examPanel=h("section",{className:"panel",id:"exam-panel"},h("div",{className:"panel-head"},h("h3",null,exam?(PHASE[currentPhase]||"Avaliação"):"Avaliação académica"),h("span",{className:"timer"},exam?String(Math.floor(remaining/60)).padStart(2,"0")+":"+String(remaining%60).padStart(2,"0"):"80% PARA APROVAÇÃO")),
   exam?h("form",{onSubmit:submitExam},exam.questions?.map((q,i)=>h("article",{className:"exam-question",key:i},h("span",null,"QUESTÃO "+String(i+1).padStart(2,"0")+" · "+q.topic),h("p",null,q.question),h("input",{value:examAnswers[i]||"",onChange:e=>setExamAnswers(old=>old.map((x,j)=>j===i?e.target.value:x)),required:true,placeholder:"A tua resposta"}))),h("button",{className:"btn",type:"submit",disabled:busy||remaining<=0},busy?"A submeter…":"Submeter avaliação")):h("button",{className:"btn",onClick:startExam,disabled:busy},busy?"A preparar…":currentPhase==="refresh"?"Iniciar diagnóstico (75%)":currentPhase==="foundation"?"Fazer exame de saída (80%)":"Avaliar próximo nível (80%)"),
-  examResult?h("div",{className:"result"},h("strong",{className:examResult.passed?"good":"bad"},examResult.passed?"APROVADO":"NÃO APROVADO"),h("p",null,"Resultado: "+examResult.score+"% · "+examResult.correct_count+"/"+examResult.total+" respostas correctas."),examResult.results?.map((r,i)=>h("p",{key:i},h("b",null,"Questão "+(i+1)+": "),r.correct?"Correcta":"Incorrecta"," · Resposta: "+r.expected_answer,h("br"),r.solution))):null);
+  examResult?h("div",{className:"result"},h("strong",{className:examResult.passed?"good":"bad"},examResult.passed?"APROVADO":"NÃO APROVADO"),h("p",null,"Resultado: "+examResult.score+"% · "+examResult.correct_count+"/"+examResult.total+" respostas correctas."),examResult.certificate?h("div",{className:"certificate-issued"},h("strong",null,"Certificado final emitido"),h("p",null,examResult.certificate.certificate_code),h("button",{className:"btn gold",onClick:()=>downloadCertificate(examResult.certificate)},"Descarregar certificado PDF")):null,examResult.results?.map((r,i)=>h("p",{key:i},h("b",null,"Questão "+(i+1)+": "),r.correct?"Correcta":"Incorrecta"," · Resposta: "+r.expected_answer,h("br"),r.solution))):null);
  const schoolContent=h(React.Fragment,null,h("div",{className:"section-head"},h("div",null,h("h2",null,"Escola de Matemática"),h("p",null,"Percurso individual · diagnóstico, base e curso principal.")),h("span",{className:"section-no"},"MAT / 100")),
   h("section",{className:"panel"},h("div",{className:"panel-head"},h("h3",null,"Percurso obrigatório"),h("span",{className:"tag"},"PROGRESSÃO CONTROLADA")),phaseTrack,h("div",{className:"notice-panel"},schoolState?"Estado actual: "+PHASE[currentPhase]+". A próxima etapa só abre após aprovação.":"O percurso será iniciado no diagnóstico.")),
   currentPhase==="refresh"||currentPhase==="foundation"?lessonPanel:levelPanel,
