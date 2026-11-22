@@ -43,6 +43,16 @@ function App(){
   tick();const id=window.setInterval(tick,1000);return()=>window.clearInterval(id);
  },[exam?.id]);
  useEffect(()=>{
+  if(!exam?.id||!user?.id)return;
+  const onVisibilityChange=()=>{
+   if(document.visibilityState==="hidden"){
+    supabase.functions.invoke("science-assessment",{body:{action:"event",department_id:"mathematics",session_id:exam.id,event_type:"tab_hidden"}}).catch(()=>{});
+   }
+  };
+  document.addEventListener("visibilitychange",onVisibilityChange);
+  return()=>document.removeEventListener("visibilitychange",onVisibilityChange);
+ },[exam?.id,user?.id]);
+ useEffect(()=>{
   const target=document.querySelector(".md-content");
   if(target&&window.renderMathInElement){const slash=String.fromCharCode(92),dollar=String.fromCharCode(36);window.renderMathInElement(target,{delimiters:[{left:dollar+dollar,right:dollar+dollar,display:true},{left:slash+"[",right:slash+"]",display:true},{left:slash+"(",right:slash+")",display:false}],throwOnError:false})}
  },[selectedLesson,selectedLevelLesson,view]);
