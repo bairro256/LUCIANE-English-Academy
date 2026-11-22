@@ -36,7 +36,7 @@ function App(){
   window.addEventListener("hashchange",onHash);onHash();
   return()=>{alive=false;subscription.unsubscribe();window.removeEventListener("hashchange",onHash)};
  },[]);
- useEffect(()=>{if(user)loadDashboard()},[user?.id]);
+ useEffect(()=>{if(user){loadDashboard();const route=location.hash||"#/dashboard";if(route.startsWith("#/escola/"))openMath();else if(route==="#/boletim")openRecord();else if(route==="#/certificados")openCertificates()}},[user?.id]);
  useEffect(()=>{
   if(!exam)return;
   const tick=()=>{const left=Math.max(0,Math.floor((new Date(exam.deadline_at).getTime()-Date.now())/1000));setRemaining(left)};
@@ -114,7 +114,7 @@ function App(){
   const {data,error}=await supabase.functions.invoke("science-assessment",{body:{action:"start",department_id:"mathematics"}});
   setBusy(false);
   if(error||data?.error){notify(data?.error||error?.message||"Não foi possível iniciar a avaliação.");return}
-  setExam(data.session);setExamAnswers(Array(data.questions.length).fill(""));setRemaining(data.duration_seconds);setView("school");
+  setExam({...data.session,questions:data.questions});setExamAnswers(Array(data.questions.length).fill(""));setRemaining(data.duration_seconds);setView("school");
   setTimeout(()=>document.getElementById("exam-panel")?.scrollIntoView({behavior:"smooth",block:"start"}),120);
  }
  async function submitExam(e){
@@ -124,7 +124,7 @@ function App(){
   const {data,error}=await supabase.functions.invoke("science-assessment",{body:{action:"submit",department_id:"mathematics",session_id:exam.id,answers:examAnswers}});
   setBusy(false);
   if(error||data?.error){notify(data?.error||error?.message||"Falha ao submeter.");return}
-  setExam(null);setExamResult(data);const st=await refreshSchoolState();await loadPhaseContent(st);await loadDashboard();
+  setExam(null);const st=await refreshSchoolState();await loadPhaseContent(st);await loadDashboard();setExamResult(data);
  }
  async function openRecord(){
   setView("record");location.hash="#/boletim";
