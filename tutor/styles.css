@@ -18,3 +18,5 @@
 .corrections strong{font-size:11px;color:#80663d}
 .corrections p{font-size:12px!important;margin:6px 0 0!important}
 @media(max-width:760px){.auth-panel{padding:21px;margin-bottom:30px}}
+
+.arena-entry{display:flex;align-items:center;gap:10px;margin-top:18px;padding:13px 11px;background:#102a24;color:#fff;border-radius:10px;text-decoration:none}.arena-entry>span:first-child{font-size:19px;color:#d6b77e}.arena-entry strong{display:block;font-size:10px;letter-spacing:.04em}.arena-entry small{display:block;font-size:9px;color:#c5d3ca;margin-top:4px}.arena-entry>b{margin-left:auto;color:#d6b77e}
