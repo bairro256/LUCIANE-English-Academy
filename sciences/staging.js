@@ -5,6 +5,7 @@ import {marked} from "https://esm.sh/marked@15.0.7";
 import DOMPurify from "https://esm.sh/dompurify@3.2.6";
 import {jsPDF} from "https://esm.sh/jspdf@2.5.2";
 import QRCode from "https://esm.sh/qrcode@1.5.4?bundle";
+import Arena from "./training-arena.js";
 
 const h=React.createElement;
 const supabase=createClient("https://nuovqgybrszacjlolacy.supabase.co","sb_publishable_9n4nC6h05pCuwEO0qTQsoQ_cSyEvNGo",{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
@@ -34,7 +35,7 @@ function App(){
   let alive=true;
   supabase.auth.getSession().then(({data})=>{if(alive){setSession(data.session);setAuthReady(true)}});
   const {data:{subscription}}=supabase.auth.onAuthStateChange((_event,next)=>{setSession(next);setAuthReady(true)});
-  const onHash=()=>{const r=location.hash||"#/dashboard";if(r==="#/boletim")setView("record");else if(r==="#/certificados")setView("certificates");else if(r.startsWith("#/escola/")){setView("school");setActiveDepartment("mathematics")}else setView("dashboard")};
+  const onHash=()=>{const r=location.hash||"#/dashboard";if(r==="#/boletim")setView("record");else if(r==="#/certificados")setView("certificates");else if(r==="#/arena")setView("arena");else if(r.startsWith("#/escola/")){setView("school");setActiveDepartment("mathematics")}else setView("dashboard")};
   window.addEventListener("hashchange",onHash);onHash();
   return()=>{alive=false;subscription.unsubscribe();window.removeEventListener("hashchange",onHash)};
  },[]);
@@ -202,7 +203,7 @@ function App(){
   setAuthNotice("");setView("dashboard");location.hash="#/dashboard";
  }
  async function signOut(){await supabase.auth.signOut();setSession(null);setView("dashboard");location.hash="#/dashboard";setEmail("");setPassword("");setFullName("")}
- const route=(v)=>{setView(v);if(v==="dashboard")location.hash="#/dashboard"};
+ const route=(v)=>{setView(v);if(v==="dashboard")location.hash="#/dashboard";else if(v==="arena")location.hash="#/arena"};
  const currentLesson=selectedLesson||selectedLevelLesson;
  if(!authReady)return h("div",{className:"boot"},"LUCIANE ",h("span",null,"ACADEMIC SCIENCES"),h("small",null,"A preparar o ambiente académico…"));
  if(!user)return h("div",{className:"auth"},
@@ -267,10 +268,10 @@ function App(){
  return h("div",{className:"shell"},
   h("aside",{className:"sidebar"},h("div",{className:"brand side-brand"},h("span",{className:"seal"},"L"),h("span",null,"LUCIANE",h("small",null,"ACADEMIC SCIENCES"))),
    h("div",{className:"side-label"},"AMBIENTE ACADÉMICO"),
-   h("nav",{className:"nav"},h("button",{className:view==="dashboard"?"active":"",onClick:()=>route("dashboard")},"⌂  Visão geral"),h("div",{className:"side-label group"},"ESCOLAS"),h("button",{className:view==="school"?"active":"",onClick:openMath},"∑  Matemática"),h("button",{disabled:true,title:"Em desenvolvimento curricular"},"Φ  Física · em preparação"),h("button",{disabled:true,title:"Em desenvolvimento curricular"},"⚗  Química · em preparação"),h("div",{className:"side-label group"},"REGISTO ACADÉMICO"),h("button",{className:view==="record"?"active":"",onClick:openRecord},"▤  Boletim & histórico"),h("button",{className:view==="certificates"?"active":"",onClick:openCertificates},"◇  Certificações")),
+   h("nav",{className:"nav"},h("button",{className:view==="dashboard"?"active":"",onClick:()=>route("dashboard")},"⌂  Visão geral"),h("div",{className:"side-label group"},"ESCOLAS"),h("button",{className:view==="school"?"active":"",onClick:openMath},"∑  Matemática"),h("button",{className:view==="arena"?"active":"",onClick:()=>route("arena")},"⚔  Training Arena"),h("button",{disabled:true,title:"Em desenvolvimento curricular"},"Φ  Física · em preparação"),h("button",{disabled:true,title:"Em desenvolvimento curricular"},"⚗  Química · em preparação"),h("div",{className:"side-label group"},"REGISTO ACADÉMICO"),h("button",{className:view==="record"?"active":"",onClick:openRecord},"▤  Boletim & histórico"),h("button",{className:view==="certificates"?"active":"",onClick:openCertificates},"◇  Certificações")),
    h("div",{className:"side-bottom"},"Rigor. Método. Domínio.",h("br"),"Formação científica progressiva")),
-  h("main",{className:"main"},h("header",{className:"topbar"},h("div",{className:"crumb"},"LUCIANE",h("b",null,"/"),view==="school"?"Escola de Matemática":view==="record"?"Boletim & histórico":view==="certificates"?"Certificações":"Visão geral"),h("div",{className:"top-actions"},h("span",{className:"status"},h("i"),"AMBIENTE REACT · SUPABASE"),h("button",{className:"avatar",onClick:signOut,title:"Terminar sessão"},(user.email||"L").slice(0,1).toUpperCase()))),
-   view==="dashboard"?h(React.Fragment,null,h("section",{className:"hero"},h("p",{className:"eyebrow"},"PLATAFORMA DE FORMAÇÃO CIENTÍFICA"),h("h1",null,"O domínio não se ",h("em",null,"presume. Comprova-se.")),h("p",null,"Três escolas independentes, progressão sequencial, prática algorítmica e avaliações com validação no servidor."),h("div",{className:"hero-meta"},h("span",null,"03 ESCOLAS"),h("span",null,"100 NÍVEIS POR ESCOLA"),h("span",null,"HISTÓRICO INDIVIDUAL"))),h("div",{className:"section-head"},h("div",null,h("h2",null,"Escolas científicas"),h("p",null,"Cada escola tem currículo, avaliações e progresso próprios.")),h("span",{className:"section-no"},"01 — 03")),h("div",{className:"cards"},schoolCards),h("section",{className:"panel"},h("div",{className:"panel-head"},h("h3",null,"Panorama académico"),h("span",{className:"tag"},"PROGRESSO")),progressRows.length?progressRows:h("div",{className:"empty"},"Inicia a Escola de Matemática para começar."))):view==="school"?schoolContent:view==="record"?recordContent:certContent,
+  h("main",{className:"main"},h("header",{className:"topbar"},h("div",{className:"crumb"},"LUCIANE",h("b",null,"/"),view==="school"?"Escola de Matemática":view==="arena"?"English Training Arena":view==="record"?"Boletim & histórico":view==="certificates"?"Certificações":"Visão geral"),h("div",{className:"top-actions"},h("span",{className:"status"},h("i"),"AMBIENTE REACT · SUPABASE"),h("button",{className:"avatar",onClick:signOut,title:"Terminar sessão"},(user.email||"L").slice(0,1).toUpperCase()))),
+   view==="arena"?h(Arena):view==="dashboard"?h(React.Fragment,null,h("section",{className:"hero"},h("p",{className:"eyebrow"},"PLATAFORMA DE FORMAÇÃO CIENTÍFICA"),h("h1",null,"O domínio não se ",h("em",null,"presume. Comprova-se.")),h("p",null,"Três escolas independentes, progressão sequencial, prática algorítmica e avaliações com validação no servidor."),h("div",{className:"hero-meta"},h("span",null,"03 ESCOLAS"),h("span",null,"100 NÍVEIS POR ESCOLA"),h("span",null,"HISTÓRICO INDIVIDUAL"))),h("div",{className:"section-head"},h("div",null,h("h2",null,"Escolas científicas"),h("p",null,"Cada escola tem currículo, avaliações e progresso próprios.")),h("span",{className:"section-no"},"01 — 03")),h("div",{className:"cards"},schoolCards),h("section",{className:"panel"},h("div",{className:"panel-head"},h("h3",null,"Panorama académico"),h("span",{className:"tag"},"PROGRESSO")),progressRows.length?progressRows:h("div",{className:"empty"},"Inicia a Escola de Matemática para começar."))):view==="school"?schoolContent:view==="record"?recordContent:certContent,
    h("footer",{className:"footer"},h("span",null,"LUCIANE ACADEMIC SCIENCES"),h("span",null,"REACT STAGING · MATEMÁTICA"),h("span",null,"© 2026"))),
   toast?h("div",{className:"toast"},toast):null);
 }
