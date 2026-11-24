@@ -1,5 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-const supabase=createClient('https://nuovqgybrszacjlolacy.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51b3ZxZ3licnN6YWNqb2xjeSIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNzk1Mjg5ODYzLCJleHAiOjIxMTA4NjU4NjN9.8noAToTx0lTbRYPzWCeCrgXtfz6yezbnFgSWNmH5mg8');
+const supabase=createClient('https://nuovqgybrszacjlolacy.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51b3ZxZ3licnN6YWNqbG9sYWN5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTUyODk4NjMsImV4cCI6MjExMDg2NTg2M30.8noAToTx0lTbRYPzWCeCrgXtfz6yezbnFgSWNmH5mg8');
 const $=s=>document.querySelector(s);
 const units=[
 {id:'adjectives',name:'Adjectives',pt:'Adjectivos: descrição, emoções, comparações e superlativos.',items:[
