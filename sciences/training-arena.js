@@ -82,7 +82,7 @@ function Arena(){
  useEffect(()=>{if(seconds===0)setRunning(false)},[seconds]);
  const options=useMemo(()=>{const others=pool.filter(x=>x!==word).slice(0,3);return [word,...others].sort((a,b)=>a[0].localeCompare(b[0]))},[idx,cat]);
  function next(){setIdx(x=>x+1);setAnswer("");setFeedback("")}
- function check(){if(!answer.trim())return;const correct=mode==="Escolha rápida"?answer===word[0]:mode==="Completar frase"?answer.toLowerCase().trim()===word[0].toLowerCase():answer.toLowerCase().trim()===word[2].toLowerCase();setAttempts(x=>x+1);if(correct)setScore(x=>x+1);setFeedback(correct?"Excelente! Resposta correcta.":"Ainda não. Resposta: "+(mode==="Escolha rápida"?word[0]:mode==="Completar frase"?word[0]:word[2]));}
+ function check(){if(!answer.trim())return;const expected=mode==="Escolha rápida"||mode==="Completar frase"||mode==="Leitura e caça-palavras"?word[0]:word[2];const correct=mode==="Escolha rápida"?answer===word[0]:answer.toLowerCase().trim()===expected.toLowerCase();setAttempts(x=>x+1);if(correct)setScore(x=>x+1);setFeedback(correct?"Excelente! Resposta correcta.":"Ainda não. Resposta: "+(mode==="Escolha rápida"?word[0]:mode==="Completar frase"?word[0]:word[2]));}
  function startArena(){setMode("Arena cronometrada");setSeconds(60);setRunning(true);setIdx(x=>x+1);setAnswer("");setFeedback("")}
  const count=500;
  const card=(w)=>h("article",{className:"arena-word"},h("div",{className:"arena-wordtop"},h("span",null,w.kind||category.pt),h("span",null,"VOCABULÁRIO")),h("h3",null,w[0]),h("p",{className:"arena-pron"},w[1]),h("p",{className:"arena-meaning"},w[2]),h("p",{className:"arena-forms"},w[3]),h("div",{className:"arena-examples"},w[4].map((ex,i)=>h("p",{key:i},h("b",null,String(i+1).padStart(2,"0")), " ",ex))));
