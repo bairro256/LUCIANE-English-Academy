@@ -1,9 +1,10 @@
-name: Deploy LUCIANE Academic Sciences to GitHub Pages
+name: Deploy LUCIANE English Academy to GitHub Pages
 on:
   push:
     branches: [main]
     paths:
-      - "sciences/**"
+      - "tutor/**"
+      - "index.html"
       - ".github/workflows/pages.yml"
   workflow_dispatch:
 permissions:
@@ -21,10 +22,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Prepare static site
+      - name: Prepare English Academy site
         run: |
           mkdir -p _site
-          cp -R sciences/. _site/
+          cp -R tutor/. _site/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
