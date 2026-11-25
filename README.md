@@ -36,3 +36,15 @@ Never commit API keys, passwords, access tokens, private student data, or enviro
 - **Backend:** Supabase project `nuovqgybrszacjlolacy`; the database, authentication, curriculum and Edge Functions remain hosted there.
 
 The GitHub Pages deployment requires Pages to be enabled for this repository and a successful Actions run. Add the final GitHub Pages URL to Supabase Auth's redirect URL allow-list before testing new sign-ups. Do not commit service-role keys or private credentials.
+
+## AI practice batch generator
+
+- **Edge Function:** `english-practice-batch` at `https://nuovqgybrszacjlolacy.supabase.co/functions/v1/english-practice-batch`.
+- Generates exactly five exercises in one OpenAI Structured Outputs request.
+- Validates unique learning targets, five distinct exercise formats, four distinct options per exercise, and the correct-option reference.
+- Shuffles answer positions server-side with a balanced random distribution.
+- Uses the server-side `OPENAI_API_KEY`; never expose that secret in browser code.
+- The public static practice page sends the Supabase publishable key and is restricted by the function to the GitHub Pages origin.
+- Persistent quota: five lesson generations per IP per minute. IP addresses are hashed before storage; the raw address is not stored.
+- SQL setup: `supabase/sql/practice-generation-limits.sql`.
+- Source: `supabase/functions/english-practice-batch/index.ts`.
