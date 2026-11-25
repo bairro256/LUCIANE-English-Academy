@@ -15,6 +15,7 @@ const json = (body: unknown, status = 200, origin = "https://bairro256.github.io
 
 const letters = ["A", "B", "C", "D"];
 const types = ["fill_blank", "situational", "definition", "grammar", "meaning_in_context"];
+const domains = ["work","school","family","health","travel","shopping","food","technology","sport","home","public_services","community"];
 
 const schema = {
   type: "object",
@@ -41,6 +42,7 @@ const schema = {
           id: { type: "string" },
           type: { type: "string", enum: types },
           target: { type: "string" },
+          contextDomain: { type: "string", enum: domains },
           prompt: { type: "string" },
           context: { type: "string" },
           options: {
@@ -58,7 +60,7 @@ const schema = {
           correctOptionId: { type: "string", enum: letters },
           explanation: { type: "string" }
         },
-        required: ["id", "type", "target", "prompt", "context", "options", "correctOptionId", "explanation"]
+        required: ["id", "type", "target", "contextDomain", "prompt", "context", "options", "correctOptionId", "explanation"]
       }
     }
   },
@@ -88,12 +90,17 @@ function validateAndRandomise(data: any, expectedTopic: string, level: string) {
   const ids = new Set<string>();
   const targets = new Set<string>();
   const seenTypes = new Set<string>();
+  const seenDomains = new Set<string>();
+  let communityCount = 0;
   for (const ex of data.exercises) {
     if (!ex || typeof ex.id !== "string" || ids.has(ex.id)) throw new Error("Identificadores de exercício inválidos ou repetidos.");
     ids.add(ex.id);
     const target = normalise(String(ex.target ?? ""));
     if (!target || targets.has(target)) throw new Error("A lição contém alvos de aprendizagem repetidos.");
     targets.add(target);
+    if (!domains.includes(ex.contextDomain)) throw new Error("Domínio contextual inválido ou em falta.");
+    seenDomains.add(ex.contextDomain);
+    if (ex.contextDomain === "community") communityCount++;
     if (!Array.isArray(ex.options) || ex.options.length !== 4) throw new Error("Cada exercício deve ter quatro opções.");
     const optionIds = ex.options.map((o: any) => o?.id);
     const optionTexts = ex.options.map((o: any) => normalise(String(o?.text ?? "")));
@@ -103,6 +110,10 @@ function validateAndRandomise(data: any, expectedTopic: string, level: string) {
     if (!types.includes(ex.type) || seenTypes.has(ex.type)) throw new Error("Os cinco formatos de exercício devem ser diferentes.");
     seenTypes.add(ex.type);
     if (![ex.prompt, ex.context, ex.explanation].every((x) => typeof x === "string" && x.trim().length > 0)) throw new Error("Conteúdo pedagógico incompleto.");
+  }
+
+  if (expectedTopic === "mixed English grammar and vocabulary" && (seenDomains.size < 4 || communityCount > 1)) {
+    throw new Error("A lição não respeita a diversidade de contextos: exige quatro domínios distintos e no máximo uma pergunta sobre comunidade.");
   }
 
   // Force a balanced, unpredictable correct-answer pattern on the server.
@@ -198,9 +209,9 @@ Pedagogy:
 - Each exercise must teach a DIFFERENT target word, phrase, collocation, or grammar structure. Never repeat or paraphrase the same target.
 - Never create mirrored questions where one asks for a translation and another simply reverses that translation.
 - Use five varied formats across the batch: fill_blank, situational, definition, grammar, meaning_in_context. Use the requested activity as a slight emphasis, not as a reason to repeat formats.
-- CONTEXT DIVERSITY IS MANDATORY when the selected topic is "all": distribute the five exercises across different everyday domains. Choose from work, school and study, family and relationships, health and appointments, travel and transport, shopping and money, food and restaurants, technology and communication, hobbies and sport, home and daily routines, public services, and community life.
-- When topic is "all", use no more than ONE exercise about community/neighbourhood/local groups. Do not make all five questions share one story, setting, organisation, or group of people.
-- Across a five-exercise batch, use at least FOUR distinct context domains, with no repeated domain more than twice. The five questions must feel like separate real-life situations.
+- CONTEXT DIVERSITY IS MANDATORY when the selected topic is "all": each exercise MUST declare its contextDomain using one of the schema values and the five exercises must span at least FOUR different domains. Choose from work, school and study, family and relationships, health and appointments, travel and transport, shopping and money, food and restaurants, technology and communication, hobbies and sport, home and daily routines, public services, and community life.
+- When topic is "all", use no more than ONE exercise with contextDomain "community". Do not make all five questions share one story, setting, organisation, or group of people.
+- Across a five-exercise batch, use at least FOUR distinct contextDomain values, with no repeated domain more than twice. These conditions are validated by the server; if they fail, regenerate internally before responding. The five questions must feel like separate real-life situations.
 - Only concentrate on community/neighbourhood contexts when the learner explicitly selects a community-specific topic.
 - Distractors must be genuinely challenging: same grammatical class, plausible collocations, preposition errors, word-order mistakes, false friends, near-synonyms, or contextually tempting alternatives. Avoid silly or obviously unrelated options.
 - Exactly ONE option must be correct in the given context. All four options must be distinct, natural-looking, and similar in length where practical.
@@ -209,7 +220,7 @@ Pedagogy:
 - Return only the JSON object matching the supplied schema. Generate all five exercises together and check target uniqueness before returning.
 - Do not try to encode a preferred correct-letter pattern; the server randomises answer positions after validation.`;
 
-  const userPrompt = `Create five challenging ${level} exercises about ${topicLabel[topic]}, with ${activityLabel[activity]} emphasis. If the topic is mixed/all, distribute the questions across at least four unrelated everyday context domains and include no more than one community/neighbourhood question. Do not reuse one scenario. Include different targets and realistic distractors. The five exercise types must cover the five schema types exactly once.`;
+  const userPrompt = `Create five challenging ${level} exercises about ${topicLabel[topic]}, with ${activityLabel[activity]} emphasis. If the topic is mixed/all, set a different contextDomain where possible, cover at least four distinct domains, and include no more than one community question. Never let the previous activity or memory theme bias the next batch. Do not reuse one scenario. Include different targets and realistic distractors. The five exercise types must cover the five schema types exactly once.`;
 
   let aiResponse: Response;
   try {
