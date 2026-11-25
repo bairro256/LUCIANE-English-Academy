@@ -596,8 +596,9 @@ Lê cada exemplo em voz alta três vezes: devagar, a ritmo normal e sem olhar pa
       try {
         const r = await timedFetch(API + "/oauth2/token", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({clientId:CLIENT_ID,grantType:"refresh_token",refreshToken:t.refreshToken})});
         if (r.ok) { const d = await r.json(); t = {accessToken:d.access_token,refreshToken:d.refresh_token,expiresAt:Date.now()+d.expires_in*1000,role:t.role||"visitor"}; writeTokens(t); return t.accessToken; }
-      } catch (err) {
-        if (err.message && err.message.includes("expirou")) throw err;
+      } catch {
+        // Um refresh antigo pode estar inválido ou indisponível; tenta iniciar uma sessão visitante nova.
+        try { localStorage.removeItem(KEY); } catch {}
       }
     }
     const r = await timedFetch(API + "/oauth2/token", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({clientId:CLIENT_ID,grantType:"anonymous"})});
