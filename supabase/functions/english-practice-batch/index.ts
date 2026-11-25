@@ -88,6 +88,7 @@ function validateAndRandomise(data: any, expectedTopic: string, level: string) {
   }
   const ids = new Set<string>();
   const targets = new Set<string>();
+  const seenTypes = new Set<string>();
   for (const ex of data.exercises) {
     if (!ex || typeof ex.id !== "string" || ids.has(ex.id)) throw new Error("Identificadores de exercício inválidos ou repetidos.");
     ids.add(ex.id);
@@ -100,7 +101,8 @@ function validateAndRandomise(data: any, expectedTopic: string, level: string) {
     if (new Set(optionIds).size !== 4 || !letters.every((x) => optionIds.includes(x))) throw new Error("IDs de opções inválidos.");
     if (optionTexts.some((x: string) => !x) || new Set(optionTexts).size !== 4) throw new Error("As quatro opções devem ser diferentes e não vazias.");
     if (!letters.includes(ex.correctOptionId) || !optionIds.includes(ex.correctOptionId)) throw new Error("Resposta correcta não corresponde a uma opção.");
-    if (!types.includes(ex.type)) throw new Error("Tipo de exercício inválido.");
+    if (!types.includes(ex.type) || seenTypes.has(ex.type)) throw new Error("Os cinco formatos de exercício devem ser diferentes.");
+    seenTypes.add(ex.type);
     if (![ex.prompt, ex.context, ex.explanation].every((x) => typeof x === "string" && x.trim().length > 0)) throw new Error("Conteúdo pedagógico incompleto.");
   }
 
