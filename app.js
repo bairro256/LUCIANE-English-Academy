@@ -643,20 +643,28 @@ Lê cada exemplo em voz alta três vezes: devagar, a ritmo normal e sem olhar pa
     const verifier = randomString(), state = randomString();
     const digest = await crypto.subtle.digest("SHA-256",new TextEncoder().encode(verifier));
     const challenge = b64url(new Uint8Array(digest));
-    const result = await wix("/_api/redirects-api/v1/redirect-session",{auth:{authRequest:{clientId:CLIENT_ID,codeChallenge:challenge,codeChallengeMethod:"S256",responseMode:"web_message",responseType:"code",scope:"offline_access",state,sessionToken}}});
+    const redirectUri = window.location.origin + window.location.pathname;
+    sessionStorage.setItem("luciane-auth-pkce-v1",JSON.stringify({verifier,state}));
+    const result = await wix("/_api/redirects-api/v1/redirect-session",{auth:{authRequest:{redirectUri,clientId:CLIENT_ID,codeChallenge:challenge,codeChallengeMethod:"S256",responseMode:"fragment",responseType:"code",scope:"offline_access",state,sessionToken}}});
     const url = result?.redirectSession?.fullUrl;
-    if (!url) throw new Error("A autenticação não devolveu o endereço de autorização.");
-    const code = await new Promise((resolve,reject)=>{
-      const frame=document.createElement("iframe"); frame.style.display="none";
-      const finish=()=>{window.removeEventListener("message",onMessage);clearTimeout(timer);frame.remove();};
-      const onMessage=e=>{const d=e.data;if(!d||d.state!==state)return;finish();if(d.error)reject(new Error("A autenticação foi recusada: "+d.error));else if(d.code)resolve(d.code);else reject(new Error("Não foi recebido o código de autorização."));};
-      const timer=setTimeout(()=>{finish();reject(new Error("A confirmação da sessão demorou demasiado. Tenta entrar novamente; se persistir, confirma o domínio autorizado nas definições Headless da Wix."));},30000);
-      window.addEventListener("message",onMessage);frame.src=url;document.body.appendChild(frame);
-    });
-    const r=await timedFetch(API+"/oauth2/token",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({clientId:CLIENT_ID,grantType:"authorization_code",code,codeVerifier:verifier})},15000);
-    const d=await timedJson(r,12000).catch(()=>({}));
-    if(!r.ok)throw new Error(d.message||"Não foi possível concluir a autenticação.");
+    if (!url) { sessionStorage.removeItem("luciane-auth-pkce-v1"); throw new Error("A Wix não devolveu o endereço de autorização."); }
+    window.location.assign(url);
+    return new Promise(()=>{});
+  }
+  async function completeAuthCallback() {
+    const params = new URLSearchParams(window.location.hash.slice(1));
+    const code = params.get("code"), returnedState = params.get("state"), oauthError = params.get("error");
+    if (!code && !oauthError) return false;
+    const saved = JSON.parse(sessionStorage.getItem("luciane-auth-pkce-v1") || "null");
+    sessionStorage.removeItem("luciane-auth-pkce-v1");
+    history.replaceState(null,"",window.location.pathname+window.location.search+"#conta");
+    if (oauthError) throw new Error("A Wix recusou a confirmação da sessão: "+oauthError);
+    if (!saved?.verifier || !saved?.state || returnedState !== saved.state) throw new Error("A resposta de autenticação não corresponde ao pedido iniciado. Volta a entrar.");
+    const r = await timedFetch(API+"/oauth2/token",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({clientId:CLIENT_ID,grantType:"authorization_code",code,codeVerifier:saved.verifier})},15000);
+    const d = await timedJson(r,12000);
+    if (!r.ok || !d.access_token) throw new Error(d.error_description||d.message||"Não foi possível concluir a sessão do aluno.");
     writeTokens({accessToken:d.access_token,refreshToken:d.refresh_token,expiresAt:Date.now()+d.expires_in*1000,role:"member"});
+    return true;
   }
   async function finishAuth(raw) {
     if(raw.state==="SUCCESS") { const sessionToken=raw.sessionToken||raw.session_token; if(!sessionToken)throw new Error("A Wix não devolveu uma sessão de membro."); await exchangeSession(sessionToken); pendingStateToken=null; return "SUCCESS"; }
@@ -792,5 +800,12 @@ Lê cada exemplo em voz alta três vezes: devagar, a ritmo normal e sem olhar pa
       showMessage("teacherMessage","Candidatura enviada com sucesso. Estado: pendente de análise.");
     }catch(err){showMessage("teacherMessage",err.message,true);}finally{button.disabled=false;}
   });
-  loadMember().then(m=>{currentMember=m;updateAccount();if(!m && ["#aula","#vocabulario","#progresso"].includes(window.location.hash)){intendedPrivateRoute=window.location.hash;window.location.hash="#conta";}else if(m && (window.location.hash==="#conta" || !window.location.hash)){window.location.hash="#sala";}}).catch(()=>updateAccount());
+  completeAuthCallback().then(async handled=>{
+    const m = await loadMember();
+    currentMember = m;
+    updateAccount();
+    if (handled && !m) showMessage("authMessage","A Wix confirmou o retorno, mas não foi possível carregar o perfil. Entra novamente.",true);
+    else if(!m && ["#aula","#vocabulario","#progresso"].includes(window.location.hash)){intendedPrivateRoute=window.location.hash;window.location.hash="#conta";}
+    else if(m && (window.location.hash==="#conta" || !window.location.hash)){window.location.hash="#sala";}
+  }).catch(err=>{updateAccount();showMessage("authMessage",err.message||"Não foi possível concluir a autenticação.",true);});
 })();
