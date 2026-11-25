@@ -118,6 +118,9 @@ $("totalScore").textContent=load("score",0);
 
 /* SOUP LAB v2: selectable topics, six activities, cumulative retrieval */
 let soupTopic="all",soupLevel="intermediate",soupActivity="meaning",soupCurrent=null,soupSelected=-1,soupRound=0;
+const SOUP_BATCH_API="https://nuovqgybrszacjlolacy.supabase.co/functions/v1/english-practice-batch";
+const SOUP_PUBLIC_KEY="sb_publishable_9n4nC6h05pCuwEO0qTQsoQ_cSyEvNGo";
+let soupBatch=[],soupBatchIndex=0;
 const soupTopicNames={all:"Todos os temas",adjectives:"Adjectivos",nouns:"Substantivos",pronouns:"Pronomes",verbs:"Verbos",prepositions:"Preposições"};
 const soupSkillNames={meaning:"COMPREENSÃO",gap:"GRAMÁTICA",context:"LEITURA CRÍTICA",translate:"TRADUÇÃO",repair:"CORRECÇÃO",recall:"MEMÓRIA"};
 function soupPool(){return soupTopic==="all"?Object.keys(bank).flatMap(k=>bank[k].map(w=>({w,t:k}))):(bank[soupTopic]||[]).map(w=>({w,t:soupTopic}));}
@@ -143,8 +146,12 @@ function soupBuild(){
 }
 function openSoup(){$("portals").hidden=true;$("soupDoor").hidden=true;document.querySelector(".hub-head").hidden=true;document.querySelector(".promise").hidden=true;$("room").hidden=true;$("soupRoom").hidden=false;$("soupExercise").hidden=true;soupTopic="all";soupLevel="intermediate";soupActivity="meaning";document.querySelectorAll("[data-souptopic]").forEach(b=>b.classList.toggle("active",b.dataset.souptopic==="all"));document.querySelectorAll("[data-souplevel]").forEach(b=>b.classList.toggle("active",b.dataset.souplevel===soupLevel));document.querySelectorAll("[data-soupactivity]").forEach(b=>b.classList.toggle("active",b.dataset.soupactivity===soupActivity));soupStats()}
 function soupRender(){
- soupCurrent=soupBuild();soupSelected=-1;if(!soupCurrent)return;$("soupExercise").hidden=false;
- $("soupExerciseMeta").textContent=soupLevel.toUpperCase()+" · "+soupTopicNames[soupTopic].toUpperCase();
+ if(soupBatch.length&&soupBatchIndex<soupBatch.length){
+  const ex=soupBatch[soupBatchIndex],correct=ex.options.find(o=>o.id===ex.correctOptionId);
+  soupCurrent={topic:soupTopic,word:ex.target,translation:"",explanation:ex.explanation,sentence:"",answer:correct?correct.text:"",options:ex.options.map(o=>o.text),prompt:ex.prompt,context:ex.context,skill:soupSkillNames[soupActivity],type:"choice",why:ex.explanation,batchId:ex.id};
+ }else soupCurrent=soupBuild();
+ soupSelected=-1;if(!soupCurrent)return;$("soupExercise").hidden=false;
+ $("soupExerciseMeta").textContent=soupLevel.toUpperCase()+" · "+soupTopicNames[soupTopic].toUpperCase()+(soupBatch.length?" · "+(soupBatchIndex+1)+"/"+soupBatch.length:"");
  $("soupExerciseTitle").textContent=({meaning:"Significado em contexto",gap:"Completar e justificar",context:"Detective de frases",translate:"Tradução inteligente",repair:"Oficina de correcção",recall:"Memória em cadeia"})[soupActivity];
  $("soupTagTopic").textContent=soupTopicNames[soupCurrent.topic].toUpperCase();$("soupTagSkill").textContent=soupCurrent.skill;$("soupTagLevel").textContent=soupLevel.toUpperCase();
  $("soupQuestion").textContent=soupCurrent.prompt;$("soupContext").textContent=soupCurrent.context;$("soupChoices").replaceChildren();
@@ -152,7 +159,29 @@ function soupRender(){
  soupCurrent.options.forEach((v,i)=>{const b=document.createElement("button");b.className="soup-choice";b.textContent=String.fromCharCode(65+i)+". "+v;b.onclick=()=>{if($("checkSoup").disabled)return;soupSelected=i;document.querySelectorAll(".soup-choice").forEach(x=>x.classList.remove("selected"));b.classList.add("selected")};$("soupChoices").appendChild(b)});
  $("checkSoup").hidden=false;$("checkSoup").disabled=false;$("newSoup").hidden=true;$("soupFeedback").textContent="";$("soupFeedback").className="soup-feedback";$("soupLearning").hidden=true;$("soupProgressBar").style.width=(soupRound%10)*10+"%";
 }
-function newSoup(){soupRender()}
+function newSoup(){
+ if(soupBatch.length&&soupBatchIndex<soupBatch.length-1){soupBatchIndex++;soupRender();return;}
+ if(soupBatch.length){soupBatch=[];soupBatchIndex=0;startSoupBatch();return;}
+ soupRender();
+}
+async function startSoupBatch(){
+ const start=$("startSoup");start.disabled=true;start.textContent="A GERAR 5 DESAFIOS…";
+ $("soupExercise").hidden=false;$("soupQuestion").textContent="A preparar a tua lição completa…";$("soupContext").textContent="A IA está a construir cinco exercícios diferentes numa única geração.";
+ soupBatch=[];soupBatchIndex=0;
+ try{
+  const response=await fetch(SOUP_BATCH_API,{method:"POST",headers:{"apikey":SOUP_PUBLIC_KEY,"Content-Type":"application/json"},body:JSON.stringify({topic:soupTopic,level:soupLevel,activity:soupActivity,count:5})});
+  const data=await response.json();
+  if(!response.ok)throw new Error(data.error||"Não foi possível gerar a lição.");
+  if(!Array.isArray(data.exercises)||data.exercises.length!==5)throw new Error("O lote recebido não contém cinco exercícios.");
+  soupBatch=data.exercises;soupBatchIndex=0;soupRound=0;soupRender();
+ }catch(error){
+  console.error("LUCIANE batch generator:",error);
+  soupBatch=[];soupBatchIndex=0;soupCurrent=soupBuild();soupRender();
+  $("soupFeedback").textContent="GERADOR IA INDISPONÍVEL — "+(error&&error.message?error.message:"falha de ligação")+". Está activo o banco local de treino; esta ronda não foi gerada em lote.";
+ }finally{
+  start.disabled=false;start.innerHTML='COMEÇAR TREINO <span>↗</span>';
+ }
+}
 function checkSoup(){
  if(!soupCurrent)return;const answer=soupCurrent.type==="text"?$("soupAnswer").value.trim().toLowerCase():soupCurrent.options[soupSelected];
  if(!answer){$("soupFeedback").textContent="Escolhe ou escreve uma resposta antes de verificar.";return}
@@ -164,10 +193,10 @@ function checkSoup(){
  $("soupChoices").querySelectorAll("button").forEach(b=>{b.disabled=true;if(b.textContent.slice(3)===soupCurrent.answer)b.classList.add("correct")});
  $("checkSoup").hidden=true;$("newSoup").hidden=false;soupRound++;soupStats();$("soupProgressBar").style.width=(soupRound%10)*10+"%";
 }
-document.querySelectorAll("[data-souptopic]").forEach(b=>b.addEventListener("click",()=>{soupTopic=b.dataset.souptopic;document.querySelectorAll("[data-souptopic]").forEach(x=>x.classList.toggle("active",x===b))}));
-document.querySelectorAll("[data-souplevel]").forEach(b=>b.addEventListener("click",()=>{soupLevel=b.dataset.souplevel;document.querySelectorAll("[data-souplevel]").forEach(x=>x.classList.toggle("active",x===b))}));
-document.querySelectorAll("[data-soupactivity]").forEach(b=>b.addEventListener("click",()=>{soupActivity=b.dataset.soupactivity;document.querySelectorAll("[data-soupactivity]").forEach(x=>x.classList.toggle("active",x===b))}));
-$("startSoup").addEventListener("click",()=>{soupRound=0;soupRender();$("soupExercise").scrollIntoView({behavior:"smooth",block:"start"})});
+document.querySelectorAll("[data-souptopic]").forEach(b=>b.addEventListener("click",()=>{soupTopic=b.dataset.souptopic;soupBatch=[];soupBatchIndex=0;document.querySelectorAll("[data-souptopic]").forEach(x=>x.classList.toggle("active",x===b))}));
+document.querySelectorAll("[data-souplevel]").forEach(b=>b.addEventListener("click",()=>{soupLevel=b.dataset.souplevel;soupBatch=[];soupBatchIndex=0;document.querySelectorAll("[data-souplevel]").forEach(x=>x.classList.toggle("active",x===b))}));
+document.querySelectorAll("[data-soupactivity]").forEach(b=>b.addEventListener("click",()=>{soupActivity=b.dataset.soupactivity;soupBatch=[];soupBatchIndex=0;document.querySelectorAll("[data-soupactivity]").forEach(x=>x.classList.toggle("active",x===b))}));
+$("startSoup").addEventListener("click",()=>{soupRound=0;startSoupBatch();$("soupExercise").scrollIntoView({behavior:"smooth",block:"start"})});
 $("soupChange").addEventListener("click",()=>$("soupExercise").hidden=true);
 $("checkSoup").addEventListener("click",checkSoup);
 $("newSoup").addEventListener("click",newSoup);
