@@ -589,13 +589,27 @@ Lê cada exemplo em voz alta três vezes: devagar, a ritmo normal e sem olhar pa
       throw err;
     } finally { clearTimeout(timer); }
   }
+  async function timedRead(response, timeoutMs=12000) {
+    let timer;
+    try {
+      return await Promise.race([
+        response.text(),
+        new Promise((_, reject) => { timer=setTimeout(()=>reject(new Error("O servidor Wix não terminou de enviar a resposta. Tenta novamente em alguns segundos.")), timeoutMs); })
+      ]);
+    } finally { clearTimeout(timer); }
+  }
+  async function timedJson(response, timeoutMs=12000) {
+    const raw=await timedRead(response,timeoutMs);
+    try { return raw?JSON.parse(raw):{}; }
+    catch { throw new Error("O servidor Wix devolveu uma resposta inválida. Actualiza a página e tenta novamente."); }
+  }
   async function token() {
     let t = readTokens();
     if (t && t.accessToken && t.expiresAt - 60000 > Date.now()) return t.accessToken;
     if (t && t.refreshToken) {
       try {
         const r = await timedFetch(API + "/oauth2/token", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({clientId:CLIENT_ID,grantType:"refresh_token",refreshToken:t.refreshToken})});
-        if (r.ok) { const d = await r.json(); t = {accessToken:d.access_token,refreshToken:d.refresh_token,expiresAt:Date.now()+d.expires_in*1000,role:t.role||"visitor"}; writeTokens(t); return t.accessToken; }
+        if (r.ok) { const d = await timedJson(r); t = {accessToken:d.access_token,refreshToken:d.refresh_token,expiresAt:Date.now()+d.expires_in*1000,role:t.role||"visitor"}; writeTokens(t); return t.accessToken; }
       } catch {
         // Um refresh antigo pode estar inválido ou indisponível; tenta iniciar uma sessão visitante nova.
         try { localStorage.removeItem(KEY); } catch {}
@@ -603,7 +617,7 @@ Lê cada exemplo em voz alta três vezes: devagar, a ritmo normal e sem olhar pa
     }
     const r = await timedFetch(API + "/oauth2/token", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({clientId:CLIENT_ID,grantType:"anonymous"})});
     if (!r.ok) throw new Error("Não foi possível iniciar uma sessão segura. Tenta novamente.");
-    const d = await r.json();
+    const d = await timedJson(r);
     if (!d.access_token) throw new Error("O servidor não devolveu um token de acesso.");
     t = {accessToken:d.access_token,refreshToken:d.refresh_token,expiresAt:Date.now()+d.expires_in*1000,role:"visitor"}; writeTokens(t); return t.accessToken;
   }
@@ -611,7 +625,7 @@ Lê cada exemplo em voz alta três vezes: devagar, a ritmo normal e sem olhar pa
     const headers = {"Content-Type":"application/json"};
     if (useToken) headers.Authorization = await token();
     const r = await timedFetch(API + path, {method,headers,body:body===undefined?undefined:JSON.stringify(body)}, 15000);
-    const raw = await r.text();
+    const raw = await timedRead(r,12000);
     let data={}; try { data=raw?JSON.parse(raw):{}; } catch { data={message:raw}; }
     if (!r.ok) { const detail=data.message || data.details?.applicationError?.description || data.details?.validationError?.fieldViolations?.map(x=>x.description||x.message).filter(Boolean).join("; ") || data.error_description || data.error || "Sem descrição devolvida pela Wix."; throw new Error("Wix ("+r.status+"): "+detail); }
     return data;
@@ -633,7 +647,7 @@ Lê cada exemplo em voz alta três vezes: devagar, a ritmo normal e sem olhar pa
       window.addEventListener("message",onMessage);frame.src=url;document.body.appendChild(frame);
     });
     const r=await timedFetch(API+"/oauth2/token",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({clientId:CLIENT_ID,grantType:"authorization_code",code,codeVerifier:verifier})},15000);
-    const d=await r.json().catch(()=>({}));
+    const d=await timedJson(r,12000).catch(()=>({}));
     if(!r.ok)throw new Error(d.message||"Não foi possível concluir a autenticação.");
     writeTokens({accessToken:d.access_token,refreshToken:d.refresh_token,expiresAt:Date.now()+d.expires_in*1000,role:"member"});
   }
