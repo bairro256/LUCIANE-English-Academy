@@ -198,7 +198,10 @@ Pedagogy:
 - Each exercise must teach a DIFFERENT target word, phrase, collocation, or grammar structure. Never repeat or paraphrase the same target.
 - Never create mirrored questions where one asks for a translation and another simply reverses that translation.
 - Use five varied formats across the batch: fill_blank, situational, definition, grammar, meaning_in_context. Use the requested activity as a slight emphasis, not as a reason to repeat formats.
-- Use authentic, realistic contexts related to community life, education, work, public services, neighbourhoods, and everyday communication where suitable.
+- CONTEXT DIVERSITY IS MANDATORY when the selected topic is "all": distribute the five exercises across different everyday domains. Choose from work, school and study, family and relationships, health and appointments, travel and transport, shopping and money, food and restaurants, technology and communication, hobbies and sport, home and daily routines, public services, and community life.
+- When topic is "all", use no more than ONE exercise about community/neighbourhood/local groups. Do not make all five questions share one story, setting, organisation, or group of people.
+- Across a five-exercise batch, use at least FOUR distinct context domains, with no repeated domain more than twice. The five questions must feel like separate real-life situations.
+- Only concentrate on community/neighbourhood contexts when the learner explicitly selects a community-specific topic.
 - Distractors must be genuinely challenging: same grammatical class, plausible collocations, preposition errors, word-order mistakes, false friends, near-synonyms, or contextually tempting alternatives. Avoid silly or obviously unrelated options.
 - Exactly ONE option must be correct in the given context. All four options must be distinct, natural-looking, and similar in length where practical.
 - At A2, use Portuguese for instructions and explanations, while keeping English examples natural. At B1, use English more often, with concise Portuguese support only where useful.
@@ -206,7 +209,7 @@ Pedagogy:
 - Return only the JSON object matching the supplied schema. Generate all five exercises together and check target uniqueness before returning.
 - Do not try to encode a preferred correct-letter pattern; the server randomises answer positions after validation.`;
 
-  const userPrompt = `Create five challenging ${level} exercises about ${topicLabel[topic]}, with ${activityLabel[activity]} emphasis. Include different targets and realistic distractors. The five exercise types must cover the five schema types exactly once.`;
+  const userPrompt = `Create five challenging ${level} exercises about ${topicLabel[topic]}, with ${activityLabel[activity]} emphasis. If the topic is mixed/all, distribute the questions across at least four unrelated everyday context domains and include no more than one community/neighbourhood question. Do not reuse one scenario. Include different targets and realistic distractors. The five exercise types must cover the five schema types exactly once.`;
 
   let aiResponse: Response;
   try {
