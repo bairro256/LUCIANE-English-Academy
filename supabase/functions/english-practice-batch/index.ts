@@ -15,7 +15,6 @@ const json = (body: unknown, status = 200, origin = "https://bairro256.github.io
 
 const letters = ["A", "B", "C", "D"];
 const types = ["fill_blank", "situational", "definition", "grammar", "meaning_in_context"];
-const rate = new Map<string, { start: number; count: number }>();
 
 const schema = {
   type: "object",
@@ -139,17 +138,34 @@ Deno.serve(async (req: Request) => {
   if (req.method !== "POST") return json({ error: "Método não permitido." }, 405, origin || "https://bairro256.github.io");
   if (!allowedOrigins.has(origin)) return json({ error: "Origem não autorizada." }, 403);
 
-  const ip = req.headers.get("cf-connecting-ip") ?? req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
-  const now = Date.now();
-  const bucket = rate.get(ip);
-  if (bucket && now - bucket.start < 60_000 && bucket.count >= 5) {
-    return json({ error: "Limite temporário atingido. Aguarda um minuto e tenta novamente." }, 429, origin);
-  }
-  if (!bucket || now - bucket.start >= 60_000) rate.set(ip, { start: now, count: 1 });
-  else bucket.count++;
-
   const apiKey = Deno.env.get("OPENAI_API_KEY");
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   if (!apiKey) return json({ error: "O gerador ainda não tem a chave privada da IA configurada no servidor." }, 503, origin);
+  if (!supabaseUrl || !serviceKey) return json({ error: "O controlo de utilização do gerador não está configurado." }, 503, origin);
+
+  // Persistent per-IP quota. The raw IP is never stored in the database.
+  const ip = req.headers.get("cf-connecting-ip") ?? req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const minute = new Date(Math.floor(Date.now() / 60_000) * 60_000).toISOString();
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(ip + ":" + apiKey));
+  const ipHash = Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, "0")).join("");
+  const limitResponse = await fetch(supabaseUrl + "/rest/v1/rpc/consume_practice_generation_limit", {
+    method: "POST",
+    headers: {
+      "apikey": serviceKey,
+      "Authorization": "Bearer " + serviceKey,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ p_ip_hash: ipHash, p_window_start: minute })
+  });
+  if (!limitResponse.ok) {
+    console.error("Rate limit store failed", limitResponse.status, (await limitResponse.text()).slice(0, 300));
+    return json({ error: "Não foi possível validar o limite de utilização. Tenta novamente." }, 503, origin);
+  }
+  const requestCount = Number(await limitResponse.json());
+  if (!Number.isFinite(requestCount) || requestCount > 5) {
+    return json({ error: "Limite temporário atingido: máximo de cinco lições por minuto. Aguarda e tenta novamente." }, 429, origin);
+  }
 
   let payload: any;
   try { payload = await req.json(); } catch { return json({ error: "Pedido JSON inválido." }, 400, origin); }
