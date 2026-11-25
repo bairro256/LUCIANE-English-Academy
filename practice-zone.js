@@ -167,6 +167,6 @@ document.querySelectorAll("[data-souplevel]").forEach(b=>b.addEventListener("cli
 document.querySelectorAll("[data-soupactivity]").forEach(b=>b.addEventListener("click",()=>{soupActivity=b.dataset.soupactivity;document.querySelectorAll("[data-soupactivity]").forEach(x=>x.classList.toggle("active",x===b))}));
 $("startSoup").addEventListener("click",()=>{soupRound=0;soupRender();$("soupExercise").scrollIntoView({behavior:"smooth",block:"start"})});
 $("soupChange").addEventListener("click",()=>$("soupExercise").hidden=true);
-$("checkSoup").addEventListener("click",checkSoup);$("newSoup").addEventListener("click",newSoup);
+
 
 })();
