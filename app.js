@@ -581,9 +581,16 @@ Lê cada exemplo em voz alta três vezes: devagar, a ritmo normal e sem olhar pa
   const writeTokens = t => localStorage.setItem(KEY, JSON.stringify(t));
   async function timedFetch(url, options={}, timeoutMs=12000) {
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    let timer;
     try {
-      return await fetch(url, {...options, signal:controller.signal});
+      const request = fetch(url, {...options, signal:controller.signal});
+      const timeout = new Promise((_, reject) => {
+        timer = setTimeout(() => {
+          controller.abort();
+          reject(new Error("A ligação ao servidor Wix excedeu o tempo limite ("+Math.round(timeoutMs/1000)+" s). Verifica a internet e tenta novamente."));
+        }, timeoutMs);
+      });
+      return await Promise.race([request, timeout]);
     } catch (err) {
       if (err && err.name === "AbortError") throw new Error("A ligação ao servidor expirou. Verifica a internet e tenta novamente.");
       throw err;
