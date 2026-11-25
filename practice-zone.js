@@ -115,4 +115,58 @@ $("record").onclick=async()=>{try{if(mediaRecorder&&mediaRecorder.state==="recor
 $("startTimer").onclick=startTimer;$("playDictation").onclick=()=>speak(currentDictation.sentence,1);$("checkDictation").onclick=checkDictation;$("newDictation").onclick=newDictation;$("revealReview").onclick=()=>{};$("checkSoup").onclick=checkSoup;$("newSoup").onclick=newSoup;
 document.querySelectorAll(".soup-modes .mode").forEach(b=>b.onclick=()=>{soupMode=b.dataset.soup;document.querySelectorAll(".soup-modes .mode").forEach(x=>x.classList.toggle("active",x===b));if(soupMode==="sentence"){soups.push({text:"The {0} learners {1} their ideas {2} a clear paragraph {3} the lesson {4}.",answers:["curious","shared","in","during","together"],why:"Construção de frase com integração de classes."})}else if(soupMode==="advanced"){soups.push({text:"If {0} had {1} earlier, {2} would have {3} the train {4}.",answers:["they","left","they","caught","before"],why:"Estrutura condicional avançada e relação temporal."})}newSoup()});
 $("totalScore").textContent=load("score",0);
+
+/* SOUP LAB v2: selectable topics, six activities, cumulative retrieval */
+let soupTopic="all",soupLevel="intermediate",soupActivity="meaning",soupCurrent=null,soupSelected=-1,soupRound=0;
+const soupTopicNames={all:"Todos os temas",adjectives:"Adjectivos",nouns:"Substantivos",pronouns:"Pronomes",verbs:"Verbos",prepositions:"Preposições"};
+const soupSkillNames={meaning:"COMPREENSÃO",gap:"GRAMÁTICA",context:"LEITURA CRÍTICA",translate:"TRADUÇÃO",repair:"CORRECÇÃO",recall:"MEMÓRIA"};
+function soupPool(){return soupTopic==="all"?Object.keys(bank).flatMap(k=>bank[k].map(w=>({w,t:k}))):(bank[soupTopic]||[]).map(w=>({w,t:soupTopic}));}
+function soupPick(a){return a[Math.floor(Math.random()*a.length)]}
+function soupShuffle(a){return [...a].sort(()=>Math.random()-.5)}
+function soupStats(){const s=load("soup:stats",{done:0,correct:0,streak:0});$("soupDone").textContent=s.done;$("soupAccuracy").textContent=(s.done?Math.round(s.correct/s.done*100):0)+"%";$("soupStreak").textContent=s.streak;$("soupReviewCount").textContent=load("soup:review",[]).length}
+function soupBuild(){
+ const pool=soupPool();if(!pool.length)return null;
+ const review=load("soup:review",[]),remember=soupActivity==="recall";
+ let candidates=remember?pool.filter(x=>review.some(r=>r.word===x.w[0]&&r.topic===x.t)):pool;
+ if(!candidates.length)candidates=pool;
+ const item=soupPick(candidates),w=item.w,t=item.t,others=soupShuffle(pool.filter(x=>x.w[0]!==w[0])).slice(0,3);
+ const sentence=soupPick(w[4]||[]),idx=Math.max(0,w[4].indexOf(sentence));
+ const q={topic:t,word:w[0],translation:w[1],explanation:w[3],sentence,answer:"",options:[],prompt:"",context:"",skill:soupSkillNames[soupActivity],type:"choice",why:""};
+ if(soupActivity==="meaning"||soupActivity==="recall"){q.prompt=soupActivity==="recall"?"MEMÓRIA ACTIVA — recupera uma palavra de um desafio anterior.":"Escolhe o significado mais exacto da palavra destacada.";q.context="“"+w[0]+"”";q.options=soupShuffle([w[1],...others.map(x=>x.w[1])]);q.answer=w[1];q.why="“"+w[0]+"” significa “"+w[1]+"”. "+w[3];}
+ else if(soupActivity==="gap"){q.prompt="Completa a frase com a palavra que mantém o sentido e a estrutura correctos.";q.context=sentence.replace(w[0],"________");q.options=soupShuffle([w[0],...others.map(x=>x.w[0])]);q.answer=w[0];q.why="A frase completa é: "+sentence+" "+w[3];}
+ else if(soupActivity==="context"){q.prompt="Qual destas frases usa a palavra correctamente?";q.context="Palavra em análise: "+w[0]+" · "+w[1];q.options=soupShuffle([sentence,...others.map(x=>soupPick(x.w[4]||[]))]);q.answer=sentence;q.why="Uso correcto: "+sentence+" "+((w[5]||[])[idx]||"")+" "+w[3];}
+ else if(soupActivity==="translate"){q.prompt="Lê a tradução e escolhe a frase inglesa equivalente.";q.context=(w[5]||[])[idx]||w[1];q.options=soupShuffle([sentence,...others.map(x=>soupPick(x.w[4]||[]))]);q.answer=sentence;q.why="Em inglês: "+sentence+" "+w[3];}
+ else {q.prompt="Oficina de correcção: escreve a palavra-alvo que completa correctamente a regra e o exemplo.";q.context="Regra a aplicar: "+w[3]+"\nFrase de referência: "+sentence;q.type="text";q.answer=w[0];q.why="A palavra-alvo é “"+w[0]+"” (“"+w[1]+"”). "+w[3];}
+ return q;
+}
+function openSoup(){$("portals").hidden=true;$("soupDoor").hidden=true;document.querySelector(".hub-head").hidden=true;document.querySelector(".promise").hidden=true;$("room").hidden=true;$("soupRoom").hidden=false;$("soupExercise").hidden=true;soupTopic="all";soupLevel="intermediate";soupActivity="meaning";document.querySelectorAll("[data-souptopic]").forEach(b=>b.classList.toggle("active",b.dataset.souptopic==="all"));document.querySelectorAll("[data-souplevel]").forEach(b=>b.classList.toggle("active",b.dataset.souplevel===soupLevel));document.querySelectorAll("[data-soupactivity]").forEach(b=>b.classList.toggle("active",b.dataset.soupactivity===soupActivity));soupStats()}
+function soupRender(){
+ soupCurrent=soupBuild();soupSelected=-1;if(!soupCurrent)return;$("soupExercise").hidden=false;
+ $("soupExerciseMeta").textContent=soupLevel.toUpperCase()+" · "+soupTopicNames[soupTopic].toUpperCase();
+ $("soupExerciseTitle").textContent=({meaning:"Significado em contexto",gap:"Completar e justificar",context:"Detective de frases",translate:"Tradução inteligente",repair:"Oficina de correcção",recall:"Memória em cadeia"})[soupActivity];
+ $("soupTagTopic").textContent=soupTopicNames[soupCurrent.topic].toUpperCase();$("soupTagSkill").textContent=soupCurrent.skill;$("soupTagLevel").textContent=soupLevel.toUpperCase();
+ $("soupQuestion").textContent=soupCurrent.prompt;$("soupContext").textContent=soupCurrent.context;$("soupChoices").replaceChildren();
+ $("soupWritten").hidden=soupCurrent.type!=="text";$("soupAnswer").value="";
+ soupCurrent.options.forEach((v,i)=>{const b=document.createElement("button");b.className="soup-choice";b.textContent=String.fromCharCode(65+i)+". "+v;b.onclick=()=>{if($("checkSoup").disabled)return;soupSelected=i;document.querySelectorAll(".soup-choice").forEach(x=>x.classList.remove("selected"));b.classList.add("selected")};$("soupChoices").appendChild(b)});
+ $("checkSoup").hidden=false;$("checkSoup").disabled=false;$("newSoup").hidden=true;$("soupFeedback").textContent="";$("soupFeedback").className="soup-feedback";$("soupLearning").hidden=true;$("soupProgressBar").style.width=(soupRound%10)*10+"%";
+}
+function newSoup(){soupRender()}
+function checkSoup(){
+ if(!soupCurrent)return;const answer=soupCurrent.type==="text"?$("soupAnswer").value.trim().toLowerCase():soupCurrent.options[soupSelected];
+ if(!answer){$("soupFeedback").textContent="Escolhe ou escreve uma resposta antes de verificar.";return}
+ const ok=answer.toLowerCase()===soupCurrent.answer.toLowerCase();let review=load("soup:review",[]),old=review.find(x=>x.word===soupCurrent.word&&x.topic===soupCurrent.topic);
+ if(ok){if(old)review=review.filter(x=>x!==old);score(soupLevel==="advanced"?25:15)}else{if(old)old.errors=(old.errors||0)+1;else review.push({word:soupCurrent.word,topic:soupCurrent.topic,errors:1});}
+ save("soup:review",review);const stats=load("soup:stats",{done:0,correct:0,streak:0});stats.done++;if(ok){stats.correct++;stats.streak++}else stats.streak=0;save("soup:stats",stats);
+ $("soupFeedback").textContent=ok?"Muito bem! Resposta correcta. Ganhaste "+(soupLevel==="advanced"?25:15)+" pontos.":"Ainda não. A resposta correcta é: "+soupCurrent.answer+". Lê a explicação e tenta aplicar a regra noutro contexto.";
+ $("soupFeedback").className="soup-feedback "+(ok?"good":"bad");$("soupLearning").hidden=false;$("soupLearning").textContent="APRENDER COM O DESAFIO · "+soupCurrent.why;
+ $("soupChoices").querySelectorAll("button").forEach(b=>{b.disabled=true;if(b.textContent.slice(3)===soupCurrent.answer)b.classList.add("correct")});
+ $("checkSoup").hidden=true;$("newSoup").hidden=false;soupRound++;soupStats();$("soupProgressBar").style.width=(soupRound%10)*10+"%";
+}
+document.querySelectorAll("[data-souptopic]").forEach(b=>b.addEventListener("click",()=>{soupTopic=b.dataset.souptopic;document.querySelectorAll("[data-souptopic]").forEach(x=>x.classList.toggle("active",x===b))}));
+document.querySelectorAll("[data-souplevel]").forEach(b=>b.addEventListener("click",()=>{soupLevel=b.dataset.souplevel;document.querySelectorAll("[data-souplevel]").forEach(x=>x.classList.toggle("active",x===b))}));
+document.querySelectorAll("[data-soupactivity]").forEach(b=>b.addEventListener("click",()=>{soupActivity=b.dataset.soupactivity;document.querySelectorAll("[data-soupactivity]").forEach(x=>x.classList.toggle("active",x===b))}));
+$("startSoup").addEventListener("click",()=>{soupRound=0;soupRender();$("soupExercise").scrollIntoView({behavior:"smooth",block:"start"})});
+$("soupChange").addEventListener("click",()=>$("soupExercise").hidden=true);
+$("checkSoup").addEventListener("click",checkSoup);$("newSoup").addEventListener("click",newSoup);
+
 })();
