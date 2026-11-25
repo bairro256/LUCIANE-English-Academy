@@ -126,10 +126,11 @@ function soupShuffle(a){return [...a].sort(()=>Math.random()-.5)}
 function soupStats(){const s=load("soup:stats",{done:0,correct:0,streak:0});$("soupDone").textContent=s.done;$("soupAccuracy").textContent=(s.done?Math.round(s.correct/s.done*100):0)+"%";$("soupStreak").textContent=s.streak;$("soupReviewCount").textContent=load("soup:review",[]).length}
 function soupBuild(){
  const pool=soupPool();if(!pool.length)return null;
- const review=load("soup:review",[]),remember=soupActivity==="recall";
- let candidates=remember?pool.filter(x=>review.some(r=>r.word===x.w[0]&&r.topic===x.t)):pool;
+ const review=load("soup:review",[]),history=load("soup:history",[]),remember=soupActivity==="recall"||(soupRound>0&&soupRound%4===3&&history.length>0);
+ let memoryWords=[...new Set([...review.map(x=>x.word+"|"+x.topic),...history.map(x=>x.word+"|"+x.topic)])];
+ let candidates=remember?pool.filter(x=>memoryWords.includes(x.w[0]+"|"+x.t)):pool;
  if(!candidates.length)candidates=pool;
- const item=soupPick(candidates),w=item.w,t=item.t,others=soupShuffle(pool.filter(x=>x.w[0]!==w[0])).slice(0,3);
+ const item=soupPick(candidates),w=item.w,t=item.t,distractorPool=soupLevel==="advanced"?(bank[t]||[]).filter(x=>x[0]!==w[0]).map(x=>({w:x,t})):pool.filter(x=>x.w[0]!==w[0]),others=soupShuffle(distractorPool).slice(0,3);
  const sentence=soupPick(w[4]||[]),idx=Math.max(0,w[4].indexOf(sentence));
  const q={topic:t,word:w[0],translation:w[1],explanation:w[3],sentence,answer:"",options:[],prompt:"",context:"",skill:soupSkillNames[soupActivity],type:"choice",why:""};
  if(soupActivity==="meaning"||soupActivity==="recall"){q.prompt=soupActivity==="recall"?"MEMÓRIA ACTIVA — recupera uma palavra de um desafio anterior.":"Escolhe o significado mais exacto da palavra destacada.";q.context="“"+w[0]+"”";q.options=soupShuffle([w[1],...others.map(x=>x.w[1])]);q.answer=w[1];q.why="“"+w[0]+"” significa “"+w[1]+"”. "+w[3];}
@@ -137,6 +138,7 @@ function soupBuild(){
  else if(soupActivity==="context"){q.prompt="Qual destas frases usa a palavra correctamente?";q.context="Palavra em análise: "+w[0]+" · "+w[1];q.options=soupShuffle([sentence,...others.map(x=>soupPick(x.w[4]||[]))]);q.answer=sentence;q.why="Uso correcto: "+sentence+" "+((w[5]||[])[idx]||"")+" "+w[3];}
  else if(soupActivity==="translate"){q.prompt="Lê a tradução e escolhe a frase inglesa equivalente.";q.context=(w[5]||[])[idx]||w[1];q.options=soupShuffle([sentence,...others.map(x=>soupPick(x.w[4]||[]))]);q.answer=sentence;q.why="Em inglês: "+sentence+" "+w[3];}
  else {q.prompt="Oficina de correcção: escreve a palavra-alvo que completa correctamente a regra e o exemplo.";q.context="Regra a aplicar: "+w[3]+"\nFrase de referência: "+sentence;q.type="text";q.answer=w[0];q.why="A palavra-alvo é “"+w[0]+"” (“"+w[1]+"”). "+w[3];}
+ if(remember&&soupActivity!=="recall")q.prompt="REVISÃO CONECTADA — este desafio recupera um conteúdo que já estudaste. "+q.prompt;
  return q;
 }
 function openSoup(){$("portals").hidden=true;$("soupDoor").hidden=true;document.querySelector(".hub-head").hidden=true;document.querySelector(".promise").hidden=true;$("room").hidden=true;$("soupRoom").hidden=false;$("soupExercise").hidden=true;soupTopic="all";soupLevel="intermediate";soupActivity="meaning";document.querySelectorAll("[data-souptopic]").forEach(b=>b.classList.toggle("active",b.dataset.souptopic==="all"));document.querySelectorAll("[data-souplevel]").forEach(b=>b.classList.toggle("active",b.dataset.souplevel===soupLevel));document.querySelectorAll("[data-soupactivity]").forEach(b=>b.classList.toggle("active",b.dataset.soupactivity===soupActivity));soupStats()}
@@ -154,7 +156,7 @@ function newSoup(){soupRender()}
 function checkSoup(){
  if(!soupCurrent)return;const answer=soupCurrent.type==="text"?$("soupAnswer").value.trim().toLowerCase():soupCurrent.options[soupSelected];
  if(!answer){$("soupFeedback").textContent="Escolhe ou escreve uma resposta antes de verificar.";return}
- const ok=answer.toLowerCase()===soupCurrent.answer.toLowerCase();let review=load("soup:review",[]),old=review.find(x=>x.word===soupCurrent.word&&x.topic===soupCurrent.topic);
+ const ok=answer.toLowerCase()===soupCurrent.answer.toLowerCase();let history=load("soup:history",[]);history.push({word:soupCurrent.word,topic:soupCurrent.topic,activity:soupActivity,level:soupLevel,correct:ok});save("soup:history",history.slice(-80));let review=load("soup:review",[]),old=review.find(x=>x.word===soupCurrent.word&&x.topic===soupCurrent.topic);
  if(ok){if(old)review=review.filter(x=>x!==old);score(soupLevel==="advanced"?25:15)}else{if(old)old.errors=(old.errors||0)+1;else review.push({word:soupCurrent.word,topic:soupCurrent.topic,errors:1});}
  save("soup:review",review);const stats=load("soup:stats",{done:0,correct:0,streak:0});stats.done++;if(ok){stats.correct++;stats.streak++}else stats.streak=0;save("soup:stats",stats);
  $("soupFeedback").textContent=ok?"Muito bem! Resposta correcta. Ganhaste "+(soupLevel==="advanced"?25:15)+" pontos.":"Ainda não. A resposta correcta é: "+soupCurrent.answer+". Lê a explicação e tenta aplicar a regra noutro contexto.";
