@@ -579,23 +579,37 @@ Lê cada exemplo em voz alta três vezes: devagar, a ritmo normal e sem olhar pa
   let recaptchaWidgetId=null; let recaptchaToken=""; let captchaAttempts=0; function renderCaptcha(){const area=$("captchaArea"),mount=$("recaptchaWidget");if(!area||!mount)return;area.hidden=false;if(!window.grecaptcha||typeof window.grecaptcha.enterprise.render!=="function"){if(captchaAttempts++<25)setTimeout(renderCaptcha,400);else showMessage("authMessage","O reCAPTCHA do Google não carregou. Confirma se a chave permite este domínio e tenta actualizar a página.",true);return;}if(recaptchaWidgetId===null){try{recaptchaWidgetId=window.grecaptcha.enterprise.render(mount,{sitekey:"6Ld0J8IcAAAAANyrnxzrRlX1xrrdXsOmsepUYosy",callback:t=>{recaptchaToken=t;showMessage("authMessage","Verificação concluída. Já podes criar a conta.");},"expired-callback":()=>{recaptchaToken="";},"error-callback":()=>{recaptchaToken="";showMessage("authMessage","O Google não conseguiu validar o CAPTCHA. Verifica a chave e o domínio.",true);}});}catch(err){showMessage("authMessage","Não foi possível mostrar o CAPTCHA: "+err.message,true);}}} window.LUCIANErenderCaptcha=renderCaptcha; window.addEventListener("luciane-recaptcha-ready",renderCaptcha); if(window.grecaptcha&&typeof window.grecaptcha.enterprise.render==="function")renderCaptcha(); function resetCaptcha(){recaptchaToken="";if(window.grecaptcha&&recaptchaWidgetId!==null)window.grecaptcha.enterprise.reset(recaptchaWidgetId);}
   const readTokens = () => { try { return JSON.parse(localStorage.getItem(KEY) || "null"); } catch { return null; } };
   const writeTokens = t => localStorage.setItem(KEY, JSON.stringify(t));
+  async function timedFetch(url, options={}, timeoutMs=12000) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      return await fetch(url, {...options, signal:controller.signal});
+    } catch (err) {
+      if (err && err.name === "AbortError") throw new Error("A ligação ao servidor expirou. Verifica a internet e tenta novamente.");
+      throw err;
+    } finally { clearTimeout(timer); }
+  }
   async function token() {
     let t = readTokens();
     if (t && t.accessToken && t.expiresAt - 60000 > Date.now()) return t.accessToken;
     if (t && t.refreshToken) {
       try {
-        const r = await fetch(API + "/oauth2/token", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({clientId:CLIENT_ID,grantType:"refresh_token",refreshToken:t.refreshToken}) });
+        const r = await timedFetch(API + "/oauth2/token", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({clientId:CLIENT_ID,grantType:"refresh_token",refreshToken:t.refreshToken})});
         if (r.ok) { const d = await r.json(); t = {accessToken:d.access_token,refreshToken:d.refresh_token,expiresAt:Date.now()+d.expires_in*1000,role:t.role||"visitor"}; writeTokens(t); return t.accessToken; }
-      } catch {}
+      } catch (err) {
+        if (err.message && err.message.includes("expirou")) throw err;
+      }
     }
-    const r = await fetch(API + "/oauth2/token", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({clientId:CLIENT_ID,grantType:"anonymous"}) });
+    const r = await timedFetch(API + "/oauth2/token", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({clientId:CLIENT_ID,grantType:"anonymous"})});
     if (!r.ok) throw new Error("Não foi possível iniciar uma sessão segura. Tenta novamente.");
-    const d = await r.json(); t = {accessToken:d.access_token,refreshToken:d.refresh_token,expiresAt:Date.now()+d.expires_in*1000,role:"visitor"}; writeTokens(t); return t.accessToken;
+    const d = await r.json();
+    if (!d.access_token) throw new Error("O servidor não devolveu um token de acesso.");
+    t = {accessToken:d.access_token,refreshToken:d.refresh_token,expiresAt:Date.now()+d.expires_in*1000,role:"visitor"}; writeTokens(t); return t.accessToken;
   }
   async function wix(path, body, method="POST", useToken=true) {
     const headers = {"Content-Type":"application/json"};
     if (useToken) headers.Authorization = await token();
-    const controller = new AbortController(); const timeout = setTimeout(() => controller.abort(), 25000); let r; try { r = await fetch(API + path, {method,headers,body:body===undefined?undefined:JSON.stringify(body),signal:controller.signal}); } catch (err) { if(err && err.name==="AbortError") throw new Error("O servidor Wix demorou demasiado a responder. Verifica a ligação e tenta novamente."); throw err; } finally { clearTimeout(timeout); }
+    const r = await timedFetch(API + path, {method,headers,body:body===undefined?undefined:JSON.stringify(body)}, 15000);
     const raw = await r.text();
     let data={}; try { data=raw?JSON.parse(raw):{}; } catch { data={message:raw}; }
     if (!r.ok) { const detail=data.message || data.details?.applicationError?.description || data.details?.validationError?.fieldViolations?.map(x=>x.description||x.message).filter(Boolean).join("; ") || data.error_description || data.error || "Sem descrição devolvida pela Wix."; throw new Error("Wix ("+r.status+"): "+detail); }
@@ -614,10 +628,10 @@ Lê cada exemplo em voz alta três vezes: devagar, a ritmo normal e sem olhar pa
       const frame=document.createElement("iframe"); frame.style.display="none";
       const finish=()=>{window.removeEventListener("message",onMessage);clearTimeout(timer);frame.remove();};
       const onMessage=e=>{const d=e.data;if(!d||d.state!==state)return;finish();if(d.error)reject(new Error("A autenticação foi recusada: "+d.error));else if(d.code)resolve(d.code);else reject(new Error("Não foi recebido o código de autorização."));};
-      const timer=setTimeout(()=>{finish();reject(new Error("A autenticação expirou. Confirma se o endereço do site está autorizado nas definições Headless da Wix."));},120000);
+      const timer=setTimeout(()=>{finish();reject(new Error("A confirmação da sessão demorou demasiado. Tenta entrar novamente; se persistir, confirma o domínio autorizado nas definições Headless da Wix."));},30000);
       window.addEventListener("message",onMessage);frame.src=url;document.body.appendChild(frame);
     });
-    const r=await fetch(API+"/oauth2/token",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({clientId:CLIENT_ID,grantType:"authorization_code",code,codeVerifier:verifier})});
+    const r=await timedFetch(API+"/oauth2/token",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({clientId:CLIENT_ID,grantType:"authorization_code",code,codeVerifier:verifier})},15000);
     const d=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(d.message||"Não foi possível concluir a autenticação.");
     writeTokens({accessToken:d.access_token,refreshToken:d.refresh_token,expiresAt:Date.now()+d.expires_in*1000,role:"member"});
@@ -703,19 +717,20 @@ Lê cada exemplo em voz alta três vezes: devagar, a ritmo normal e sem olhar pa
   });
   setMode("login");
   $("authForm").addEventListener("submit",async e=>{
-    e.preventDefault(); const button=$("authSubmit"); button.disabled=true; showMessage("authMessage","A processar…");
+    e.preventDefault(); const button=$("authSubmit"); button.disabled=true; button.textContent="A verificar…"; showMessage("authMessage","A verificar os dados e a ligação segura…");
     try {
       const email=$("memberEmail").value.trim(), password=$("memberPassword").value;
       if(mode==="register"&&!recaptchaToken)throw new Error("Confirma primeiro a caixa Não sou um robô.");
       const firstName=$("memberFirstName").value.trim(), lastName=$("memberLastName").value.trim();
       const body=mode==="login"?{login_id:{email},password}:{login_id:{email},password,profile:{nickname:[firstName,lastName].filter(Boolean).join(" "),firstName,lastName,emails:[email],phones:[],customFields:[]}}; if(mode==="register" && recaptchaToken) body.captcha_tokens=[{Recaptcha:recaptchaToken}];
+      showMessage("authMessage",mode==="login"?"A validar as credenciais…":"A criar a tua conta…");
       const raw=await wix(mode==="login"?"/_api/iam/authentication/v2/login":"/_api/iam/authentication/v2/register",body);
       const outcome=await finishAuth(raw);
       if(outcome==="VERIFY") { $("verifyPanel").hidden=false; $("authForm").hidden=true; showMessage("authMessage","Verifica o teu email para concluir o registo."); }
       else if(outcome==="PENDING") { $("authForm").hidden=true; $("pendingPanel").hidden=false; showMessage("authMessage","A tua conta aguarda aprovação."); }
       else { currentMember=await loadMember()||saveMemberProfile(memberFromIdentity(raw.identity)); if(!currentMember)throw new Error("A Wix confirmou o login, mas não devolveu dados suficientes do perfil. Tenta actualizar a página."); updateAccount(); showMessage("authMessage","Sessão iniciada com sucesso."); continueToRequestedArea(); }
     } catch(err) { resetCaptcha(); showMessage("authMessage",err.message||"Ocorreu um erro inesperado. Tenta novamente.",true); }
-    finally { button.disabled=false; }
+    finally { button.disabled=false; button.textContent=mode==="login"?"Entrar":"Criar conta"; }
   });
   $("verifySubmit").addEventListener("click",async()=>{
     if(!pendingStateToken){showMessage("authMessage","Não existe uma verificação pendente. Inicia novamente o registo.",true);return;}
